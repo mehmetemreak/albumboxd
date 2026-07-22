@@ -18,9 +18,15 @@
   aside h2{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:14px}
   .day-badge{font-size:11px;color:var(--gold);border:1px solid var(--border);border-radius:4px;padding:4px 8px;margin-bottom:16px;display:inline-block}
   .wild{color:var(--red);border-color:rgba(201,112,75,.5)}
-  .arc-item{display:block;width:100%;text-align:left;background:none;border:none;color:var(--muted);padding:6px 8px;border-radius:4px;cursor:pointer;font-size:13px;font-family:inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .arc-item:hover{color:var(--text)} .arc-item.active{background:#1B1814;color:var(--gold)}
-  .arc-item small{display:block;font-size:10px;color:var(--faint)}
+  .arc-item{display:flex;gap:8px;align-items:center;width:100%;text-align:left;background:none;border:none;border-left:2px solid transparent;color:var(--muted);padding:6px 8px;border-radius:0 4px 4px 0;cursor:pointer;font-size:13px;font-family:inherit;overflow:hidden;transition:color .15s,border-color .15s}
+  .arc-item:hover{color:var(--text)} .arc-item.active{background:#1B1814;color:var(--gold);border-left-color:var(--gold)}
+  .arc-item .meta{min-width:0;flex:1}
+  .arc-item .meta span.t{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .arc-item small{display:block;font-size:10px;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cover-thumb{width:26px;height:26px;border-radius:3px;object-fit:cover;flex-shrink:0;background:#1B1814}
+  .cover-big{width:84px;height:84px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--border)}
+  .stamp{display:inline-block;transform:rotate(-5deg);border:1.5px solid var(--gold);color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:3px;opacity:.85}
+  .stamp.wildstamp{border-color:var(--red);color:var(--red)}
   .side-foot{margin-top:auto;padding-top:16px;display:flex;gap:8px}
   .mini{font-size:10px;color:var(--faint);background:none;border:1px solid var(--border);border-radius:3px;padding:3px 8px;cursor:pointer;font-family:inherit}
   .mini:hover{color:var(--muted)}
@@ -46,8 +52,9 @@
   .head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
   .head .t{font-size:22px}.head .a{font-size:13px;color:var(--muted)}
   .del{background:none;border:none;color:var(--faint);cursor:pointer;font-size:16px}.del:hover{color:var(--red)}
-  .card{border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px}
-  .card-head{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+  .card{border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;transition:border-color .18s}
+  .card:hover{border-color:#4A4436}
+  .card-head{display:flex;align-items:baseline;gap:8px;margin:-16px -16px 12px;padding:8px 16px;background:#12100D;border-bottom:1px dashed var(--border);border-radius:8px 8px 0 0}
   .card-head .l{font-size:13px;font-weight:500}.card-head .h{font-size:10px;color:var(--faint);margin-left:auto}
   .card p,.card li,.card td,.card th{font-size:13px;color:var(--body);line-height:1.65}
   .card ul{list-style:none}
@@ -483,8 +490,10 @@ function render(){
   $("archive-list").innerHTML=S.log.length
     ? S.log.slice().reverse().map((e)=>{
         const i=S.log.indexOf(e);
+        const cov=e.mb&&e.mb.id?`https://coverartarchive.org/release-group/${e.mb.id}/front-250`:null;
         return `<button class="arc-item ${S.active===i?"active":""}" onclick="S.active=${i};render()">
-          <span class="mono" style="color:var(--faint)">${e.day}.</span> ${esc(e.album)}<small>${esc(e.artist)}${e.rating?` · ${esc(e.rating)}/5`:""}</small></button>`;
+          ${cov?`<img class="cover-thumb" src="${cov}" loading="lazy" onerror="this.style.visibility='hidden'" alt="" />`:'<span class="cover-thumb"></span>'}
+          <span class="meta"><span class="t"><span class="mono" style="color:var(--faint)">${e.day}.</span> ${esc(e.album)}</span><small>${esc(e.artist)}${e.rating?` · ${esc(e.rating)}/5`:""}</small></span></button>`;
       }).join("")
     : '<p style="font-size:12px;color:var(--faint)">Henuz log yok.</p>';
 
@@ -494,8 +503,14 @@ function render(){
 
   d.innerHTML=`
     <div class="head">
-      <div><p class="t display">Gun ${e.day} — ${esc(e.album)}</p>
-      <p class="a">${esc(e.artist)}${mb&&mb.firstDate?` <span class="mono">· ${esc(mb.firstDate)}</span>`:""}${e.rating?` · <span class="rating">${esc(e.rating)}/5</span>`:""}${e.valence?` · valence: ${esc(e.valence)}`:""}${e.arousal?` · arousal: ${esc(e.arousal)}`:""}${e.productivity?` · uretkenlik: ${esc(e.productivity)}`:""}${e.anxiety?` · anksiyete: ${esc(e.anxiety)}`:""}${e.depression?` · depresif: ${esc(e.depression)}`:""}${e.intent?` · ${esc(e.intent)}`:""}</p></div>
+      <div style="display:flex;gap:16px;align-items:flex-start">
+        ${mb&&mb.id?`<img class="cover-big" src="https://coverartarchive.org/release-group/${mb.id}/front-250" onerror="this.style.display='none'" alt="" />`:""}
+        <div>
+          <span class="stamp${e.day%7===0?" wildstamp":""}">Gun ${e.day}${e.day%7===0?" · wildcard":""}</span>
+          <p class="t display" style="margin-top:8px">${esc(e.album)}</p>
+      <p class="a">${esc(e.artist)}${mb&&mb.firstDate?` <span class="mono">· ${esc(mb.firstDate)}</span>`:""}${e.rating?` · <span class="rating">${esc(e.rating)}/5</span>`:""}${e.valence?` · valence: ${esc(e.valence)}`:""}${e.arousal?` · arousal: ${esc(e.arousal)}`:""}${e.productivity?` · uretkenlik: ${esc(e.productivity)}`:""}${e.anxiety?` · anksiyete: ${esc(e.anxiety)}`:""}${e.depression?` · depresif: ${esc(e.depression)}`:""}${e.intent?` · ${esc(e.intent)}`:""}</p>
+        </div>
+      </div>
       <button class="del" onclick="removeEntry(${i})">×</button>
     </div>
     ${e.note?`<div class="card"><div class="card-head"><span class="l">Debrief Notun</span><span class="h">${esc(e.date)}</span></div><p>${esc(e.note)}</p></div>`:""}
