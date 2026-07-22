@@ -95,28 +95,44 @@
         </div>
         <div class="row3">
           <div><label>Puan (0-5)</label><input id="in-rating" type="number" min="0" max="5" step="0.5" placeholder="3.5" /></div>
-          <div><label>Valence (1-10)</label><input id="in-valence" type="number" min="1" max="10" placeholder="hoslukk: 1 kotu — 10 iyi" /></div>
-          <div><label>Arousal (1-10)</label><input id="in-arousal" type="number" min="1" max="10" placeholder="uyarilma: 1 durgun — 10 gergin" /></div>
+          <div><label>Valence <span class="mono" id="valence-val">5</span>/10</label>
+            <input id="in-valence" type="range" min="1" max="10" value="5" oninput="updateAffect()" /></div>
+          <div><label>Arousal <span class="mono" id="arousal-val">5</span>/10</label>
+            <input id="in-arousal" type="range" min="1" max="10" value="5" oninput="updateAffect()" /></div>
+        </div>
+        <div style="display:flex;gap:16px;align-items:center;margin-bottom:14px;padding:12px;border:1px solid var(--border);border-radius:8px">
+          <svg id="affect-map" width="140" height="140" viewBox="0 0 140 140" style="flex-shrink:0">
+            <line x1="70" y1="4" x2="70" y2="136" stroke="#3A342C" stroke-width="1"/>
+            <line x1="4" y1="70" x2="136" y2="70" stroke="#3A342C" stroke-width="1"/>
+            <text x="70" y="14" fill="#5A5348" font-size="8" text-anchor="middle">gergin</text>
+            <text x="70" y="132" fill="#5A5348" font-size="8" text-anchor="middle">durgun</text>
+            <text x="10" y="73" fill="#5A5348" font-size="8">kotu</text>
+            <text x="112" y="73" fill="#5A5348" font-size="8">iyi</text>
+            <circle id="affect-dot" cx="70" cy="70" r="5" fill="#C9A24B"/>
+          </svg>
+          <p class="note" id="affect-label" style="margin-top:0">Notr bolge — orta valence, orta arousal.</p>
         </div>
         <div class="row3">
-          <div><label>Fiziksel agri (0-3, opsiyonel)</label><input id="in-pain" type="number" min="0" max="3" placeholder="0=yok — 3=agir" /></div>
-          <div><label>Niyetlilik (opsiyonel)</label>
-            <select id="in-intent">
-              <option value="">—</option>
-              <option value="secim">Kendi secimim</option>
-              <option value="zincir">Zincir onerisi</option>
-              <option value="wildcard">Wildcard</option>
-            </select>
-          </div>
-          <div></div>
+          <div><label>Uretkenlik (0-10, ops.)</label><input id="in-prod" type="number" min="0" max="10" placeholder="—" /></div>
+          <div><label>Anksiyete (0-10, ops.)</label><input id="in-anx" type="number" min="0" max="10" placeholder="—" /></div>
+          <div><label>Depresif hissiyat (0-10, ops.)</label><input id="in-dep" type="number" min="0" max="10" placeholder="—" /></div>
+        </div>
+        <div style="margin-bottom:12px">
+          <label>Niyetlilik (opsiyonel)</label>
+          <select id="in-intent">
+            <option value="">—</option>
+            <option value="secim">Kendi secimim</option>
+            <option value="zincir">Zincir onerisi</option>
+            <option value="wildcard">Wildcard</option>
+          </select>
         </div>
         <div style="margin-bottom:12px"><label>Not / reaksiyon</label><textarea id="in-note" placeholder="Kisa reaksiyon, one cikan sarkilar, akilda kalan..."></textarea></div>
         <button class="go" id="btn-go" onclick="logDay()">Gunu Logla + Kunye Cek</button>
         <p class="note">Kunye MusicBrainz'den, baglam ozeti Wikipedia'dan cekilir (~3-4 sn, rate limit geregi).
         Derin analiz — donem, soy hatti, anatomi, soz dunyasi, trivia — Claude sohbetinde yapilir;
         ciktiyi asagidaki "Claude Analizi" alanina yapistirip arsivleyebilirsin.
-        Valence = o gunun hoslugu (kotu↔iyi), arousal = uyarilma seviyesi (durgun↔gergin) —
-        ikisi bagimsiz eksenler, "dusuk enerji + gergin" ile "dusuk enerji + sakin" farkli seyler.</p>
+        Uretkenlik/anksiyete/depresyon alanlari tamamen opsiyonel — doldurmamak da bir tercihtir,
+        bu bir klinik olcek degil, kaba bir iz.</p>
       </div>
       <div id="dossier"></div>
       <div class="card" style="margin-top:24px"><div class="card-head"><span class="l">Merak Filtresi</span><span class="h">highlight anahtar kelimeleri — virgullu</span></div>
@@ -282,6 +298,21 @@ function extractHighlights(wiki){
   return out.sort((a,b)=>b.score-a.score).slice(0,8);
 }
 
+function updateAffect(){
+  const v=parseInt($("in-valence").value,10), a=parseInt($("in-arousal").value,10);
+  $("valence-val").textContent=v; $("arousal-val").textContent=a;
+  const cx=4+((v-1)/9)*132, cy=136-((a-1)/9)*132;
+  const dot=$("affect-dot"); if(dot){ dot.setAttribute("cx",cx); dot.setAttribute("cy",cy); }
+  let label;
+  if(v>=6&&a>=6)label="Heyecanli / cosku dolu bolge.";
+  else if(v>=6&&a<6)label="Sakin / huzurlu bolge.";
+  else if(v<6&&a>=6)label="Gergin / tedirgin bolge.";
+  else label="Bitkin / dusuk enerjili bolge.";
+  const lbl=$("affect-label"); if(lbl)lbl.textContent=label;
+}
+document.addEventListener("DOMContentLoaded",updateAffect);
+setTimeout(updateAffect,0);
+
 // ---------- Log a day ----------
 async function logDay(){
   const album=$("in-album").value.trim(), artist=$("in-artist").value.trim();
@@ -294,7 +325,8 @@ async function logDay(){
       day:S.log.length+1,
       album:(mb&&mb.title)||album, artist:(mb&&mb.artist)||artist,
       rating:$("in-rating").value, valence:$("in-valence").value, arousal:$("in-arousal").value,
-      pain:$("in-pain").value, intent:$("in-intent").value,
+      productivity:$("in-prod").value, anxiety:$("in-anx").value, depression:$("in-dep").value,
+      intent:$("in-intent").value,
       note:$("in-note").value.trim(),
       analysis:"", // Claude sohbetinden yapistirilir
       date:new Date().toISOString().slice(0,10),
@@ -305,8 +337,8 @@ async function logDay(){
       entry.labelMates=(await fetchLabelMates(mb.labelIds[0],mb.id)).slice(0,12);
     }
     S.log.push(entry); S.active=S.log.length-1; save(); render();
-    ["in-album","in-artist","in-rating","in-note","in-valence","in-arousal","in-pain"].forEach(id=>$(id).value="");
-    $("in-intent").value="";
+    ["in-album","in-artist","in-rating","in-note","in-prod","in-anx","in-dep"].forEach(id=>$(id).value="");
+    $("in-intent").value=""; $("in-valence").value=5; $("in-arousal").value=5; updateAffect();
   }catch(e){ showErr("Loglanamadi: "+e.message); }
   finally{ btn.disabled=false; btn.textContent="Gunu Logla + Kunye Cek"; }
 }
@@ -341,7 +373,8 @@ function renderRetro(){
     return {
       day:e.day,album:e.album,rating:parseFloat(e.rating),
       valence:parseFloat(e.valence),arousal:parseFloat(e.arousal),
-      pain:parseFloat(e.pain),intent:e.intent||"?",genre:g
+      productivity:parseFloat(e.productivity),anxiety:parseFloat(e.anxiety),depression:parseFloat(e.depression),
+      intent:e.intent||"?",genre:g
     };
   });
   // valence/arousal avg by genre
@@ -360,8 +393,12 @@ function renderRetro(){
   const valid=rows.filter(r=>!isNaN(r.valence)&&!isNaN(r.arousal)&&!isNaN(r.rating));
   const rV=pearson(valid.map(r=>r.valence),valid.map(r=>r.rating));
   const rA=pearson(valid.map(r=>r.arousal),valid.map(r=>r.rating));
-  const painValid=rows.filter(r=>!isNaN(r.pain)&&!isNaN(r.rating));
-  const rP=pearson(painValid.map(r=>r.pain),painValid.map(r=>r.rating));
+  const painValid=rows.filter(r=>!isNaN(r.productivity)&&!isNaN(r.rating));
+  const rProd=pearson(painValid.map(r=>r.productivity),painValid.map(r=>r.rating));
+  const anxValid=rows.filter(r=>!isNaN(r.anxiety)&&!isNaN(r.rating));
+  const rAnx=pearson(anxValid.map(r=>r.anxiety),anxValid.map(r=>r.rating));
+  const depValid=rows.filter(r=>!isNaN(r.depression)&&!isNaN(r.rating));
+  const rDep=pearson(depValid.map(r=>r.depression),depValid.map(r=>r.rating));
   const corrLine=(label,r,n)=>r==null?`<li><b>${label}</b> ↔ puan → yetersiz veri (n=${n})</li>`
     :`<li><b>${label}</b> ↔ puan → <span class="mono">r=${r.toFixed(2)}</span> ${Math.abs(r)<0.2?"(zayif/yok)":Math.abs(r)<0.5?"(orta)":"(guclu)"} <span class="mono" style="color:var(--faint)">(n=${n})</span></li>`;
   // intent breakdown
@@ -393,7 +430,7 @@ function renderRetro(){
       </table>
       <p class="note">Haftalik/aylik "geriye bak" analizi icin bu tabloyu (ya da Export JSON'u) Claude sohbetine yapistir — korelasyon yorumunu orada yapariz.</p></div>
     <div class="card"><div class="card-head"><span class="l">Valence/Arousal ↔ Puan</span><span class="h">pearson r</span></div><ul>
-      ${corrLine("Valence",rV,valid.length)}${corrLine("Arousal",rA,valid.length)}${corrLine("Fiziksel agri",rP,painValid.length)}</ul>
+      ${corrLine("Valence",rV,valid.length)}${corrLine("Arousal",rA,valid.length)}${corrLine("Uretkenlik",rProd,painValid.length)}${corrLine("Anksiyete",rAnx,anxValid.length)}${corrLine("Depresif hissiyat",rDep,depValid.length)}</ul>
       <p class="note">n<10'da r degeri gurultuye cok duyarli — yorum yapmadan once veri biriktir.</p></div>
     <div class="card"><div class="card-head"><span class="l">Tur ↔ Valence/Arousal/Puan</span></div><ul>${genreRows||"<li>Veri az.</li>"}</ul></div>
     ${intentRows?`<div class="card"><div class="card-head"><span class="l">Niyetlilik ↔ Puan</span><span class="h">kendi secim vs zincir vs wildcard</span></div><ul>${intentRows}</ul></div>`:""}`;
@@ -444,7 +481,7 @@ function render(){
   d.innerHTML=`
     <div class="head">
       <div><p class="t display">Gun ${e.day} — ${esc(e.album)}</p>
-      <p class="a">${esc(e.artist)}${mb&&mb.firstDate?` <span class="mono">· ${esc(mb.firstDate)}</span>`:""}${e.rating?` · <span class="rating">${esc(e.rating)}/5</span>`:""}${e.valence?` · valence: ${esc(e.valence)}`:""}${e.arousal?` · arousal: ${esc(e.arousal)}`:""}${e.pain?` · agri: ${esc(e.pain)}`:""}${e.intent?` · ${esc(e.intent)}`:""}</p></div>
+      <p class="a">${esc(e.artist)}${mb&&mb.firstDate?` <span class="mono">· ${esc(mb.firstDate)}</span>`:""}${e.rating?` · <span class="rating">${esc(e.rating)}/5</span>`:""}${e.valence?` · valence: ${esc(e.valence)}`:""}${e.arousal?` · arousal: ${esc(e.arousal)}`:""}${e.productivity?` · uretkenlik: ${esc(e.productivity)}`:""}${e.anxiety?` · anksiyete: ${esc(e.anxiety)}`:""}${e.depression?` · depresif: ${esc(e.depression)}`:""}${e.intent?` · ${esc(e.intent)}`:""}</p></div>
       <button class="del" onclick="removeEntry(${i})">×</button>
     </div>
     ${e.note?`<div class="card"><div class="card-head"><span class="l">Debrief Notun</span><span class="h">${esc(e.date)}</span></div><p>${esc(e.note)}</p></div>`:""}
