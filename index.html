@@ -190,13 +190,20 @@
           </div>
         </div>
       </div>
-      <div class="card"><div class="card-head"><span class="l">Merak Filtresi</span><span class="h">highlight anahtar kelimeleri — virgullu</span></div>
-        <textarea id="in-kw" style="min-height:60px;font-size:11px" placeholder="feud, sampled, recorded in..."></textarea>
-        <button class="go" style="margin-top:8px" onclick="saveKw()">Kaydet</button>
+      <div class="card"><div class="card-head"><span class="l">Merak Filtresi</span><span class="h">kategorili — kok yazmak yeterli (sampl → sampled/sampling)</span></div>
+        <div style="display:grid;gap:10px">
+          <div><label>Drama / trivia (×3)</label><textarea id="kw-drama" style="min-height:40px;font-size:11px"></textarea></div>
+          <div><label>Soz / anlam (×3)</label><textarea id="kw-lyric" style="min-height:40px;font-size:11px"></textarea></div>
+          <div><label>Produksiyon sirlari (×2)</label><textarea id="kw-prod" style="min-height:40px;font-size:11px"></textarea></div>
+          <div><label>Soy hatti (×2)</label><textarea id="kw-lineage" style="min-height:40px;font-size:11px"></textarea></div>
+          <div><label>Genel (×1)</label><textarea id="kw-general" style="min-height:40px;font-size:11px"></textarea></div>
+          <div><label>Negatif — bu kelimeleri iceren cumleler ASLA gosterilmez</label><textarea id="kw-negative" style="min-height:40px;font-size:11px"></textarea></div>
+        </div>
+        <button class="go" style="margin-top:10px" onclick="saveKw2()">Kaydet</button>
       </div>
-      <div class="card"><div class="card-head"><span class="l">Genius Proxy</span><span class="h">opsiyonel — worker.js kurulumu README'de</span></div>
+      <div class="card"><div class="card-head"><span class="l">Genius Proxy</span><span class="h">worker.js kurulumu README'de</span></div>
         <div style="display:flex;gap:8px">
-          <input id="in-gproxy" placeholder="https://album-genius.SENIN-ADIN.workers.dev" />
+          <input id="in-gproxy" placeholder="https://worker.mehmeteemreaksbl.workers.dev" />
           <button class="go" onclick="saveGproxy()">Kaydet</button>
         </div>
       </div>
@@ -287,7 +294,7 @@ async function fetchLabelMates(labelId, excludeRgId){
 
 const pname=(p)=>p&&(p.name||p); // backward compat: old entries store strings
 
-function gproxy(){ return (localStorage.getItem("genius-proxy")||"").replace(/\/$/,""); }
+function gproxy(){ return (localStorage.getItem("genius-proxy")||"https://worker.mehmeteemreaksbl.workers.dev").replace(/\/$/,""); }
 function saveGproxy(){ localStorage.setItem("genius-proxy",$("in-gproxy").value.trim()); render(); }
 async function genGenius(i){
   const e=S.log[i]; if(!e)return;
@@ -335,10 +342,33 @@ function toggleLike(i,ti){
 }
 const fmtLen=(ms)=>ms?`${Math.floor(ms/60000)}:${String(Math.floor((ms%60000)/1000)).padStart(2,"0")}`:"";
 
-// ---------- Wiki highlights ----------
-const DEFAULT_KW="feud,fight,refused,fired,quit,lawsuit,banned,arrested,drugs,overdose,accident,secret,rumor,sampled,sample,cover,influenced,inspired,named after,recorded in,one take,first time,only,never,famously,reportedly,allegedly,producer,demo,rejected,label,chart,flop,sold";
-function getKw(){ return (localStorage.getItem("wiki-kw")||DEFAULT_KW).split(",").map(s=>s.trim().toLowerCase()).filter(Boolean); }
-function saveKw(){ localStorage.setItem("wiki-kw",$("in-kw").value.trim()||DEFAULT_KW); render(); }
+// ---------- Wiki highlights: kategorili + agirlikli + negatif liste ----------
+const KW_DEFAULTS={
+  drama:"feud,fought,fight,refus,fired,quit,lawsuit,sued,banned,arrest,drug,overdose,accident,walked out,destroy,smash,threaten,argument,tension,breakdown",
+  lyric:"lyric,theme,refers to,reference to,about the,inspired by,wrote about,written about,metaphor,narrat,addresses,deals with,meaning",
+  prod:"one take,single take,first take,demo,reject,recorded in,recorded at,improvis,overdub,tape,accident,mistake,experiment,unusual",
+  lineage:"sampl,influenc,covered by,cover of,tribute,borrow,homage,cited,inspired",
+  general:"famously,reportedly,allegedly,rumor,rumour,secret,never,legend"
+};
+const KW_WEIGHTS={drama:3,lyric:3,prod:2,lineage:2,general:1};
+const KW_LABELS={drama:"drama",lyric:"soz/anlam",prod:"produksiyon",lineage:"soy hatti",general:"genel"};
+const NEG_DEFAULT="peaked at,certified,billboard,albums chart,singles chart,copies sold,track listing,personnel,catalogue number";
+function getKw2(){
+  let o;
+  try{ o=JSON.parse(localStorage.getItem("kw2")||"{}"); }catch(e){ o={}; }
+  const out={};
+  for(const k in KW_DEFAULTS) out[k]=(o[k]!=null?o[k]:KW_DEFAULTS[k]);
+  out.negative=(o.negative!=null?o.negative:NEG_DEFAULT);
+  return out;
+}
+function parseList(s){ return String(s||"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean); }
+function saveKw2(){
+  const o={};
+  for(const k in KW_DEFAULTS) o[k]=$("kw-"+k).value.trim();
+  o.negative=$("kw-negative").value.trim();
+  localStorage.setItem("kw2",JSON.stringify(o));
+  render();
+}
 const SECTION_WEIGHT={lyrics:3,themes:3,background:2,legacy:1.4,influence:1.4,recording:1.2,composition:1.2,music:1,release:1,reception:1,"critical reception":1};
 function sectionWeight(sec){
   const s=sec.toLowerCase();
@@ -347,14 +377,25 @@ function sectionWeight(sec){
 }
 function extractHighlights(wiki){
   if(!wiki||!wiki.sections)return [];
-  const kws=getKw(); const out=[];
+  const kw=getKw2();
+  const neg=parseList(kw.negative);
+  const cats={}; for(const k in KW_DEFAULTS) cats[k]=parseList(kw[k]);
+  const out=[];
   Object.entries(wiki.sections).forEach(([sec,txt])=>{
-    const w=sectionWeight(sec);
+    const sw=sectionWeight(sec);
     txt.split(/(?<=[.!?])\s+/).forEach(sent=>{
       if(sent.length<60||sent.length>420)return;
       const low=sent.toLowerCase();
-      const hits=kws.reduce((a,k)=>a+(low.includes(k)?1:0),0);
-      if(hits>0)out.push({sec,sent:sent.trim(),score:hits*w});
+      if(neg.some(n=>low.includes(n)))return; // negatif: cumle direkt elenir
+      let score=0,best=null,bestW=0;
+      for(const k in cats){
+        const hits=cats[k].reduce((a,t)=>a+(low.includes(t)?1:0),0);
+        if(hits>0){
+          score+=hits*KW_WEIGHTS[k];
+          if(KW_WEIGHTS[k]>bestW){bestW=KW_WEIGHTS[k];best=k;}
+        }
+      }
+      if(score>0)out.push({sec,cat:KW_LABELS[best],sent:sent.trim(),score:score*sw});
     });
   });
   return out.sort((a,b)=>b.score-a.score).slice(0,8);
@@ -539,7 +580,9 @@ function restoreSettingsInputs(){
   if($("th-accent"))$("th-accent").value=t.accent||"#C9A24B";
   if($("th-density"))$("th-density").value=t.density||"normal";
   const gp=$("in-gproxy"); if(gp)gp.value=gproxy();
-  const kw=$("in-kw"); if(kw)kw.value=localStorage.getItem("wiki-kw")||DEFAULT_KW;
+  const kw=getKw2();
+  for(const k in KW_DEFAULTS){ const el=$("kw-"+k); if(el)el.value=kw[k]; }
+  const ng=$("kw-negative"); if(ng)ng.value=kw.negative;
 }
 applyTheme();
 
@@ -602,7 +645,7 @@ function render(){
     ${wiki&&wiki.extract?`<div class="card"><div class="card-head"><span class="l">Baglam Ozeti</span><span class="h">wikipedia — giris</span></div><p>${esc(wiki.extract)}</p>
       <p class="src">Kaynak: <a href="${esc(wiki.url)}" target="_blank" rel="noopener">${esc(wiki.title)}</a></p></div>`:""}
     ${(()=>{const hl=extractHighlights(wiki);return hl.length?`<div class="card"><div class="card-head"><span class="l">Highlight'lar</span><span class="h">wikipedia — merak filtreli</span></div><ul>
-      ${hl.map(h=>`<li><span class="tag">${esc(h.sec)}</span> ${esc(h.sent)}</li>`).join("")}</ul>
+      ${hl.map(h=>`<li><span class="tag">${esc(h.sec)}${h.cat?` · ${esc(h.cat)}`:""}</span> ${esc(h.sent)}</li>`).join("")}</ul>
       <p class="note">Filtre anahtar kelimeyle calisir, anlamla degil — kacirilan seyler icin makale linki yukarida, derin yorum sohbette.</p></div>`:""})()}
     ${e.labelMates&&e.labelMates.length?`<div class="card"><div class="card-head"><span class="l">Zincir Malzemesi</span><span class="h">ayni label — donem komsulari</span></div><ul>
       ${e.labelMates.map(m=>`<li>${esc(m.title)} — <b>${esc(m.artist)}</b>${m.date?` <span class="mono" style="color:var(--faint)">${esc(m.date.slice(0,4))}</span>`:""}</li>`).join("")}
