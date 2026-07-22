@@ -1,8 +1,21 @@
-# Album Dosyasi — kişisel albüm dossier sitesi
+# Album Ritueli — v2
 
 Tek dosyalık statik site. Build step yok, framework yok, dependency yok.
-Veri kaynakları: **MusicBrainz** (künye — prodüktör, label, tarih, tür) + **Wikipedia** (bağlam özeti).
+
+**Sistem bileşenleri:**
+- **Debrief logu:** Gün sayacı otomatik. Puan + enerji + mood + not → her gün tek kayıt.
+- **Wildcard-7:** Her 7. gün rozet kırmızıya döner, zincir kırma günü hatırlatılır.
+- **Künye (kesin veri):** MusicBrainz — prodüktör, label, tarih, tür. Kaynak linkli.
+- **Zincir Malzemesi:** Aynı label'dan dönem komşusu albümler otomatik listelenir.
+- **Merak Katmanı (opsiyonel LLM):** Dönem/soy hattı/anatomi/söz dünyası/trivia —
+  kendi Anthropic API key'inle, künye verisi modele "kesin veri" olarak beslenir
+  (halüsinasyon alanı daraltılmış). Sözler birebir basılmaz; çözümlenir.
+- **Sorgu Hattı:** Albüm başına serbest soru-cevap, geçmişi kayıtlı.
+- **Geriye Bak:** Enerji↔tür ve tür↔puan korelasyon tabloları (logdan hesaplanır).
+- **Export/Import:** localStorage silinirse diye JSON yedek.
+
 Arşiv tarayıcının `localStorage`'ında tutulur — kalıcıdır, token/kota derdi yoktur.
+API key sadece sessionStorage'da yaşar; sekme kapanınca silinir.
 
 ## Deploy (GitHub Pages, ~3 dakika)
 

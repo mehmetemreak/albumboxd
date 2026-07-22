@@ -3,274 +3,426 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Album Dosyasi</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
+<title>Album Ritueli</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --bg: #0E0D0C; --panel: #151310; --border: #3A342C;
-    --text: #EDE6D6; --muted: #8A8072; --faint: #5A5348;
-    --gold: #C9A24B; --gold-hover: #D9B461; --body-text: #C9C2B4; --red: #C9704B;
+    --bg:#0E0D0C; --panel:#151310; --border:#3A342C; --text:#EDE6D6;
+    --muted:#8A8072; --faint:#5A5348; --gold:#C9A24B; --gold-h:#D9B461;
+    --body:#C9C2B4; --red:#C9704B; --green:#8FA86B;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; }
-  .display { font-family: 'Fraunces', serif; }
-  .mono { font-family: 'IBM Plex Mono', monospace; }
-
-  aside { width: 240px; flex-shrink: 0; border-right: 1px solid var(--border); padding: 20px; }
-  aside h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-bottom: 16px; }
-  .arc-item { display: block; width: 100%; text-align: left; background: none; border: none; color: var(--muted); padding: 6px 8px; border-radius: 4px; cursor: pointer; font-size: 13px; font-family: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .arc-item:hover { color: var(--text); }
-  .arc-item.active { background: #1B1814; color: var(--gold); }
-  .arc-item small { display: block; font-size: 10px; color: var(--faint); }
-
-  main { flex: 1; padding: 40px 24px; max-width: 760px; }
-  h1 { font-size: 24px; margin-bottom: 4px; }
-  .sub { font-size: 11px; color: var(--muted); margin-bottom: 32px; }
-
-  .form { border: 1px solid var(--border); background: var(--panel); border-radius: 8px; padding: 20px; margin-bottom: 32px; }
-  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
-  input { background: transparent; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 13px; color: var(--text); font-family: inherit; }
-  input:focus { outline: none; border-color: var(--gold); }
-  input::placeholder { color: var(--faint); }
-  button.go { display: inline-flex; align-items: center; gap: 8px; background: var(--gold); color: var(--bg); border: none; font-weight: 500; font-size: 13px; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-family: inherit; }
-  button.go:hover { background: var(--gold-hover); }
-  button.go:disabled { background: var(--faint); cursor: wait; }
-
-  .err { font-size: 12px; color: var(--red); border: 1px solid rgba(201,112,75,.4); border-radius: 4px; padding: 8px 12px; margin-bottom: 24px; }
-  .hint { font-size: 12px; color: var(--faint); margin-top: 10px; line-height: 1.5; }
-
-  .head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
-  .head .t { font-size: 24px; }
-  .head .a { font-size: 13px; color: var(--muted); }
-  .del { background: none; border: none; color: var(--faint); cursor: pointer; font-size: 16px; }
-  .del:hover { color: var(--red); }
-
-  .card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-  .card-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
-  .card-head .l { font-size: 13px; font-weight: 500; }
-  .card-head .h { font-size: 10px; color: var(--faint); margin-left: auto; }
-  .card p, .card li { font-size: 13px; color: var(--body-text); line-height: 1.65; }
-  .card ul { list-style: none; }
-  .card li { padding: 3px 0; border-bottom: 1px dashed #26221C; }
-  .card li:last-child { border-bottom: none; }
-  .card li b { color: var(--text); font-weight: 500; }
-  .tag { display: inline-block; font-size: 10px; color: var(--gold); border: 1px solid var(--border); border-radius: 3px; padding: 1px 6px; margin: 2px 3px 2px 0; }
-  .src { font-size: 10px; color: var(--faint); margin-top: 8px; }
-  .src a { color: var(--muted); }
-  .empty { border: 1px dashed var(--border); border-radius: 8px; padding: 40px; text-align: center; font-size: 13px; color: var(--muted); }
-  @media (max-width: 700px) { body { flex-direction: column; } aside { width: 100%; border-right: none; border-bottom: 1px solid var(--border); } .row { grid-template-columns: 1fr; } }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex}
+  .display{font-family:'Fraunces',serif}.mono{font-family:'IBM Plex Mono',monospace}
+  aside{width:250px;flex-shrink:0;border-right:1px solid var(--border);padding:20px;display:flex;flex-direction:column}
+  aside h2{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:14px}
+  .day-badge{font-size:11px;color:var(--gold);border:1px solid var(--border);border-radius:4px;padding:4px 8px;margin-bottom:16px;display:inline-block}
+  .wild{color:var(--red);border-color:rgba(201,112,75,.5)}
+  .arc-item{display:block;width:100%;text-align:left;background:none;border:none;color:var(--muted);padding:6px 8px;border-radius:4px;cursor:pointer;font-size:13px;font-family:inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .arc-item:hover{color:var(--text)} .arc-item.active{background:#1B1814;color:var(--gold)}
+  .arc-item small{display:block;font-size:10px;color:var(--faint)}
+  .side-foot{margin-top:auto;padding-top:16px;display:flex;gap:8px}
+  .mini{font-size:10px;color:var(--faint);background:none;border:1px solid var(--border);border-radius:3px;padding:3px 8px;cursor:pointer;font-family:inherit}
+  .mini:hover{color:var(--muted)}
+  main{flex:1;padding:36px 24px;max-width:780px}
+  h1{font-size:24px;margin-bottom:4px}
+  .sub{font-size:11px;color:var(--muted);margin-bottom:24px}
+  .tabs{display:flex;gap:6px;margin-bottom:20px}
+  .tab{font-size:12px;background:none;border:1px solid var(--border);color:var(--muted);border-radius:4px;padding:6px 12px;cursor:pointer;font-family:inherit}
+  .tab.on{color:var(--gold);border-color:var(--gold)}
+  .form{border:1px solid var(--border);background:var(--panel);border-radius:8px;padding:20px;margin-bottom:24px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+  input,textarea,select{background:transparent;border:1px solid var(--border);border-radius:4px;padding:8px 12px;font-size:13px;color:var(--text);font-family:inherit;width:100%}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold)}
+  input::placeholder,textarea::placeholder{color:var(--faint)}
+  select option{background:var(--panel)}
+  textarea{resize:vertical;min-height:60px}
+  label{font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px}
+  button.go{display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:var(--bg);border:none;font-weight:500;font-size:13px;padding:8px 16px;border-radius:4px;cursor:pointer;font-family:inherit}
+  button.go:hover{background:var(--gold-h)} button.go:disabled{background:var(--faint);cursor:wait}
+  .err{font-size:12px;color:var(--red);border:1px solid rgba(201,112,75,.4);border-radius:4px;padding:8px 12px;margin-bottom:20px}
+  .note{font-size:11px;color:var(--faint);line-height:1.5;margin-top:8px}
+  .head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+  .head .t{font-size:22px}.head .a{font-size:13px;color:var(--muted)}
+  .del{background:none;border:none;color:var(--faint);cursor:pointer;font-size:16px}.del:hover{color:var(--red)}
+  .card{border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px}
+  .card-head{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+  .card-head .l{font-size:13px;font-weight:500}.card-head .h{font-size:10px;color:var(--faint);margin-left:auto}
+  .card p,.card li,.card td,.card th{font-size:13px;color:var(--body);line-height:1.65}
+  .card ul{list-style:none}
+  .card li{padding:3px 0;border-bottom:1px dashed #26221C}.card li:last-child{border-bottom:none}
+  .card li b{color:var(--text);font-weight:500}
+  .tag{display:inline-block;font-size:10px;color:var(--gold);border:1px solid var(--border);border-radius:3px;padding:1px 6px;margin:2px 3px 2px 0}
+  .src{font-size:10px;color:var(--faint);margin-top:8px}.src a{color:var(--muted)}
+  .empty{border:1px dashed var(--border);border-radius:8px;padding:36px;text-align:center;font-size:13px;color:var(--muted)}
+  .chat{max-height:320px;overflow-y:auto;margin-bottom:10px}
+  .msg{font-size:13px;line-height:1.6;border-radius:8px;padding:8px 12px;margin-bottom:8px}
+  .msg.u{background:#1B1814;margin-left:32px}
+  .msg.a{border:1px solid var(--border);color:var(--body);margin-right:16px;white-space:pre-wrap}
+  table{border-collapse:collapse;width:100%}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #26221C}
+  th{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--faint)}
+  .rating{color:var(--gold)}
+  @media(max-width:700px){body{flex-direction:column}aside{width:100%;border-right:none;border-bottom:1px solid var(--border)}.row,.row3{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
   <aside>
-    <h2>Arsiv</h2>
-    <div id="archive-list"></div>
+    <h2>Ritüel Logu</h2>
+    <span class="day-badge" id="day-badge"></span>
+    <div id="archive-list" style="flex:1;overflow-y:auto"></div>
+    <div class="side-foot">
+      <button class="mini" onclick="exportLog()">Export</button>
+      <button class="mini" onclick="document.getElementById('import-file').click()">Import</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importLog(event)" />
+    </div>
   </aside>
   <main>
-    <h1 class="display">Album Dosyasi</h1>
-    <p class="sub">musicbrainz + wikipedia · veri-temelli, halusinasyonsuz</p>
+    <h1 class="display">Album Ritueli</h1>
+    <p class="sub">debrief · zincir · merak katmani · geriye bakis</p>
 
-    <div class="form">
-      <div class="row">
-        <input id="in-album" placeholder="Album adi" />
-        <input id="in-artist" placeholder="Sanatci" />
-      </div>
-      <button class="go" id="btn-go" onclick="generate()">Dossier Olustur</button>
-      <p class="hint">Veri kaynaklari: MusicBrainz (kredi/label/tarih — kesin veri) ve Wikipedia (baglam ozeti). Ikisi de acik lisansli, telif derdi yok.</p>
+    <div class="tabs">
+      <button class="tab on" id="tab-debrief" onclick="switchTab('debrief')">Debrief</button>
+      <button class="tab" id="tab-retro" onclick="switchTab('retro')">Geriye Bak</button>
+      <button class="tab" id="tab-settings" onclick="switchTab('settings')">Ayarlar</button>
     </div>
 
     <div id="err" class="err" style="display:none"></div>
-    <div id="dossier"></div>
+
+    <!-- DEBRIEF TAB -->
+    <div id="pane-debrief">
+      <div class="form">
+        <div class="row">
+          <div><label>Album</label><input id="in-album" placeholder="The Stone Roses" /></div>
+          <div><label>Sanatci</label><input id="in-artist" placeholder="The Stone Roses" /></div>
+        </div>
+        <div class="row3">
+          <div><label>Puan (0-5)</label><input id="in-rating" type="number" min="0" max="5" step="0.5" placeholder="3.5" /></div>
+          <div><label>Gunun enerjisi</label>
+            <select id="in-energy">
+              <option value="">—</option>
+              <option value="dusuk">Dusuk</option>
+              <option value="orta">Orta</option>
+              <option value="yuksek">Yuksek</option>
+            </select>
+          </div>
+          <div><label>Mood</label>
+            <select id="in-mood">
+              <option value="">—</option>
+              <option value="karanlik">Karanlik</option>
+              <option value="notr">Notr</option>
+              <option value="iyi">Iyi</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:12px"><label>Not / reaksiyon</label><textarea id="in-note" placeholder="Kisa reaksiyon, one cikan sarkilar, akilda kalan..."></textarea></div>
+        <button class="go" id="btn-go" onclick="logDay()">Gunu Logla + Dossier Cek</button>
+        <p class="note">Kunye MusicBrainz'den, baglam Wikipedia'dan otomatik cekilir. Merak katmani (donem/soy hatti/anatomi/soz dunyasi/trivia + soru-cevap) icin Ayarlar'dan API key gir — opsiyonel.</p>
+      </div>
+      <div id="dossier"></div>
+    </div>
+
+    <!-- RETRO TAB -->
+    <div id="pane-retro" style="display:none"></div>
+
+    <!-- SETTINGS TAB -->
+    <div id="pane-settings" style="display:none">
+      <div class="form">
+        <label>Anthropic API Key (merak katmani icin, opsiyonel)</label>
+        <input id="in-key" type="password" placeholder="sk-ant-..." />
+        <p class="note">Key sadece bu tarayici oturumunun hafizasinda tutulur (sessionStorage) — sunucuya gitmez cunku sunucu yok; istekler tarayicindan direkt Anthropic'e gider. Sekmeyi kapatinca silinir, her oturumda yeniden girersin. Kalici saklamamak bilincli bir guvenlik tercihi.</p>
+        <button class="go" style="margin-top:10px" onclick="saveKey()">Kaydet</button>
+        <span id="key-status" class="note"></span>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="l">Wildcard Kurali</span></div>
+        <p>Her 7. gun zincir kirilir: sifir baglantili bir album secilir (scene-cluster hapsine karsi).
+        Sol ustteki gun rozetinde wildcard gunu kirmizi gorunur. Wildcard secimini sistem yapmaz —
+        bilincli olarak sana birakilmistir; rastgelelik disaridan gelmeli.</p>
+      </div>
+    </div>
   </main>
 
 <script>
-const STORE = "album-dossier-site:v1";
-let archive = {};
-let active = null;
-
-try { archive = JSON.parse(localStorage.getItem(STORE) || "{}"); } catch (e) { archive = {}; }
+const STORE = "album-rituel:v2";
+let S = { log: [], active: null }; // log: array of entries in day order
+try { const raw = localStorage.getItem(STORE); if (raw) S = JSON.parse(raw); } catch(e){}
 
 const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-const keyFor = (al, ar) => ar.trim().toLowerCase() + "::" + al.trim().toLowerCase();
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function save(){ localStorage.setItem(STORE, JSON.stringify(S)); }
+function showErr(m){ $("err").textContent=m; $("err").style.display="block"; }
+function clearErr(){ $("err").style.display="none"; }
+const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
 
-function save() { localStorage.setItem(STORE, JSON.stringify(archive)); }
+// ---------- MusicBrainz + Wikipedia ----------
+const MB="https://musicbrainz.org/ws/2";
+async function mbJson(u){ const r=await fetch(u,{headers:{Accept:"application/json"}}); if(!r.ok)throw new Error("MusicBrainz "+r.status); return r.json(); }
 
-function showErr(msg) { const e = $("err"); e.textContent = msg; e.style.display = "block"; }
-function clearErr() { $("err").style.display = "none"; }
-
-// ---- MusicBrainz ----
-// Rate limit: 1 req/sec. Be polite: identify the app via query param not needed for browser,
-// but keep sequential requests spaced.
-const MB = "https://musicbrainz.org/ws/2";
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-async function mbJson(url) {
-  const res = await fetch(url, { headers: { "Accept": "application/json" } });
-  if (!res.ok) throw new Error("MusicBrainz " + res.status);
-  return res.json();
-}
-
-async function fetchMusicBrainz(album, artist) {
-  // 1) find release-group
-  const q = encodeURIComponent(`releasegroup:"${album}" AND artist:"${artist}"`);
-  const search = await mbJson(`${MB}/release-group/?query=${q}&fmt=json&limit=5`);
-  const rg = (search["release-groups"] || [])[0];
-  if (!rg) return null;
-
+async function fetchMB(album,artist){
+  const q=encodeURIComponent(`releasegroup:"${album}" AND artist:"${artist}"`);
+  const s=await mbJson(`${MB}/release-group/?query=${q}&fmt=json&limit=5`);
+  const rg=(s["release-groups"]||[])[0]; if(!rg) return null;
   await sleep(1100);
-  // 2) release-group details with relations + releases
-  const detail = await mbJson(`${MB}/release-group/${rg.id}?inc=artist-credits+releases+genres+url-rels&fmt=json`);
-
-  // 3) pick earliest release, get its labels + recording credits summary
-  const releases = (detail.releases || []).slice().sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
-  const first = releases[0];
-  let labels = [], producers = [], engineers = [];
-  if (first) {
+  const d=await mbJson(`${MB}/release-group/${rg.id}?inc=artist-credits+releases+genres&fmt=json`);
+  const rels=(d.releases||[]).slice().sort((a,b)=>(a.date||"9999").localeCompare(b.date||"9999"));
+  const first=rels[0];
+  let labels=[],labelIds=[],producers=[],engineers=[];
+  if(first){
     await sleep(1100);
-    const rel = await mbJson(`${MB}/release/${first.id}?inc=labels+recordings+artist-rels+recording-level-rels+work-rels&fmt=json`);
-    labels = (rel["label-info"] || []).map((l) => l.label && l.label.name).filter(Boolean);
-    const seen = new Set();
-    (rel.media || []).forEach((m) => (m.tracks || []).forEach((t) => {
-      const recRels = (t.recording && t.recording.relations) || [];
-      recRels.forEach((r) => {
-        const name = r.artist && r.artist.name;
-        if (!name || seen.has(r.type + name)) return;
-        seen.add(r.type + name);
-        if (/producer/i.test(r.type)) producers.push(name);
-        else if (/engineer|mix|master/i.test(r.type)) engineers.push(name);
+    const rel=await mbJson(`${MB}/release/${first.id}?inc=labels+recordings+recording-level-rels+artist-rels&fmt=json`);
+    (rel["label-info"]||[]).forEach(l=>{ if(l.label){ labels.push(l.label.name); labelIds.push(l.label.id); } });
+    const seen=new Set();
+    (rel.media||[]).forEach(m=>(m.tracks||[]).forEach(t=>{
+      ((t.recording&&t.recording.relations)||[]).forEach(r=>{
+        const n=r.artist&&r.artist.name; if(!n||seen.has(r.type+n))return; seen.add(r.type+n);
+        if(/producer/i.test(r.type))producers.push(n);
+        else if(/engineer|mix|master/i.test(r.type))engineers.push(n);
       });
     }));
   }
-
   return {
-    id: rg.id,
-    title: detail.title,
-    artist: (detail["artist-credit"] || []).map((a) => a.name).join(""),
-    firstDate: detail["first-release-date"] || (first && first.date) || "",
-    type: detail["primary-type"] || "",
-    genres: (detail.genres || []).sort((a,b) => b.count - a.count).slice(0, 6).map((g) => g.name),
-    labels: [...new Set(labels)],
-    producers: [...new Set(producers)].slice(0, 8),
-    engineers: [...new Set(engineers)].slice(0, 8),
-    url: `https://musicbrainz.org/release-group/${rg.id}`,
+    id:rg.id, title:d.title,
+    artist:(d["artist-credit"]||[]).map(a=>a.name).join(""),
+    firstDate:d["first-release-date"]||(first&&first.date)||"",
+    genres:(d.genres||[]).sort((a,b)=>b.count-a.count).slice(0,6).map(g=>g.name),
+    labels:[...new Set(labels)], labelIds:[...new Set(labelIds)],
+    producers:[...new Set(producers)].slice(0,8),
+    engineers:[...new Set(engineers)].slice(0,6),
+    url:`https://musicbrainz.org/release-group/${rg.id}`
   };
 }
 
-// ---- Wikipedia ----
-async function fetchWikipedia(album, artist) {
-  const sq = encodeURIComponent(`${album} ${artist} album`);
-  const s = await (await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${sq}&format=json&origin=*&srlimit=3`)).json();
-  const hit = ((s.query || {}).search || [])[0];
-  if (!hit) return null;
-  const t = encodeURIComponent(hit.title);
-  const sum = await (await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${t}`)).json();
-  return {
-    title: sum.title,
-    extract: sum.extract || "",
-    url: (sum.content_urls && sum.content_urls.desktop && sum.content_urls.desktop.page) || `https://en.wikipedia.org/wiki/${t}`,
-  };
+async function fetchWiki(album,artist){
+  const sq=encodeURIComponent(`${album} ${artist} album`);
+  const s=await(await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${sq}&format=json&origin=*&srlimit=3`)).json();
+  const hit=((s.query||{}).search||[])[0]; if(!hit)return null;
+  const t=encodeURIComponent(hit.title);
+  const sum=await(await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${t}`)).json();
+  return { title:sum.title, extract:sum.extract||"", url:(sum.content_urls&&sum.content_urls.desktop&&sum.content_urls.desktop.page)||`https://en.wikipedia.org/wiki/${t}` };
 }
 
-// ---- Generate ----
-async function generate() {
-  const album = $("in-album").value.trim();
-  const artist = $("in-artist").value.trim();
-  if (!album || !artist) return;
+// Chain: albums on the same label (era-adjacent)
+async function fetchLabelMates(labelId, excludeRgId){
+  try{
+    const d=await mbJson(`${MB}/release-group?label=${labelId}&fmt=json&limit=100&type=album`);
+    return (d["release-groups"]||[])
+      .filter(rg=>rg.id!==excludeRgId && rg["primary-type"]==="Album")
+      .map(rg=>({title:rg.title, artist:(rg["artist-credit"]||[]).map(a=>a.name).join(""), date:rg["first-release-date"]||""}))
+      .sort((a,b)=>(a.date||"9999").localeCompare(b.date||"9999"));
+  }catch(e){ return []; }
+}
+
+// ---------- LLM curiosity layer (optional, user's own key) ----------
+function getKey(){ return sessionStorage.getItem("anthropic-key")||""; }
+function saveKey(){
+  const k=$("in-key").value.trim();
+  if(k){ sessionStorage.setItem("anthropic-key",k); $("key-status").textContent=" Kaydedildi (bu oturum icin)."; }
+  else { sessionStorage.removeItem("anthropic-key"); $("key-status").textContent=" Silindi."; }
+}
+
+async function callClaude(system, messages, maxTokens){
+  const key=getKey(); if(!key) throw new Error("API key yok — Ayarlar'dan gir.");
+  const r=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "x-api-key":key,
+      "anthropic-version":"2023-06-01",
+      "anthropic-dangerous-direct-browser-access":"true"
+    },
+    body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:maxTokens||4000,system,messages})
+  });
+  if(!r.ok){ const t=await r.text(); throw new Error("API "+r.status+": "+t.slice(0,120)); }
+  const data=await r.json();
+  return (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n").trim();
+}
+
+const CUR_SYSTEM=`Sen bir müzik tarihçisi, kültür eleştirmeni ve söz çözümleyicisisin. Yanıtını SADECE geçerli JSON olarak ver, code fence yok. Anahtarlar (Türkçe içerik): "context" (dönemin sosyo-politik iklimi + albümün ilişkisi, 120-160 kelime), "lineage" (öncüller ve etkilenenler, somut isimler, 120-160 kelime), "musicalAnatomy" (1-2 şarkıda aranjman/prodüksiyon kararları, ekipman değil kompozisyon odaklı, 140-180 kelime), "lyricalWorld" (söz dünyası: temalar, anlatıcı, metaforlar, dönem ruhu; sözleri birebir ALINTLAMA — telif; kendi cümlelerinle çözümle, 150-200 kelime), "backstage" (trivia/anekdot/drama, 110-150 kelime). Sana verilen KESİN VERİYİ (prodüktör, label, tarih) temel al, onunla çelişme, emin olmadığını uydurma.`;
+
+const CHAT_SYSTEM=`Sen bir müzik tarihçisi ve kültür eleştirmenisin; belirli bir albüm hakkında Türkçe sohbet ediyorsun. Net, analitik, nüktedan; fluff yok. Şarkı sözlerini birebir alıntılama (telif) — kendi cümlelerinle çözümle. Verilen kesin veriyle (prodüktör/label/tarih) çelişme, emin olmadığını uydurma. 200 kelime altı tut, açıkça istenirse uzat.`;
+
+function factSheet(e){
+  const mb=e.mb||{};
+  return `KESİN VERİ (MusicBrainz):
+Albüm: ${e.album} — ${e.artist}${mb.firstDate?` | İlk yayın: ${mb.firstDate}`:""}${(mb.labels||[]).length?` | Label: ${mb.labels.join(", ")}`:""}${(mb.producers||[]).length?` | Prodüktör: ${mb.producers.join(", ")}`:""}${(mb.genres||[]).length?` | Tür etiketleri: ${mb.genres.join(", ")}`:""}
+${e.wiki&&e.wiki.extract?`Wikipedia özeti: ${e.wiki.extract}`:""}`;
+}
+
+async function genCuriosity(idx){
+  const e=S.log[idx]; if(!e)return;
   clearErr();
-  const btn = $("btn-go");
-  btn.disabled = true; btn.textContent = "Hazirlaniyor...";
-
-  try {
-    const [mb, wiki] = await Promise.all([
-      fetchMusicBrainz(album, artist).catch(() => null),
-      fetchWikipedia(album, artist).catch(() => null),
-    ]);
-    if (!mb && !wiki) throw new Error("Iki kaynakta da sonuc yok. Yazimi kontrol et.");
-
-    const k = keyFor(album, artist);
-    archive[k] = {
-      album: (mb && mb.title) || album,
-      artist: (mb && mb.artist) || artist,
-      createdAt: new Date().toISOString(),
-      mb, wiki,
-    };
-    save();
-    active = k;
-    render();
-    $("in-album").value = ""; $("in-artist").value = "";
-  } catch (e) {
-    showErr("Dossier uretilemedi: " + e.message);
-  } finally {
-    btn.disabled = false; btn.textContent = "Dossier Olustur";
-  }
+  const btn=$("btn-cur"); if(btn){btn.disabled=true;btn.textContent="Uretiliyor...";}
+  try{
+    const raw=await callClaude(CUR_SYSTEM,[{role:"user",content:factSheet(e)}],4000);
+    const clean=raw.replace(/```json|```/g,"").trim();
+    let parsed;
+    try{ parsed=JSON.parse(clean); }
+    catch(err){
+      const lc=clean.lastIndexOf('",');
+      if(lc>0) parsed=JSON.parse(clean.slice(0,lc+1)+"}"); else throw err;
+    }
+    e.cur=parsed; save(); render();
+  }catch(err){ showErr("Merak katmani uretilemedi: "+err.message); }
+  finally{ if(btn){btn.disabled=false;btn.textContent="Merak Katmanini Uret";} }
 }
 
-function removeEntry(k) {
-  delete archive[k];
-  if (active === k) active = null;
+async function ask(idx){
+  const e=S.log[idx]; if(!e)return;
+  const inp=$("chat-in"); const q=(inp.value||"").trim(); if(!q)return;
+  inp.value=""; clearErr();
+  e.chat=e.chat||[]; e.chat.push({role:"user",content:q}); save(); render();
+  try{
+    const history=e.chat.map(m=>({role:m.role,content:m.content}));
+    const ans=await callClaude(CHAT_SYSTEM,[
+      {role:"user",content:factSheet(e)+(e.cur?`\nMevcut çözümleme özeti: ${Object.values(e.cur).join(" ").slice(0,1500)}`:"")},
+      {role:"assistant",content:"Anlaşıldı, bu albüm hakkında sorularını bekliyorum."},
+      ...history
+    ],1500);
+    e.chat.push({role:"assistant",content:ans}); save(); render();
+  }catch(err){ showErr("Soru yanitlanamadi: "+err.message); }
+}
+
+// ---------- Log a day ----------
+async function logDay(){
+  const album=$("in-album").value.trim(), artist=$("in-artist").value.trim();
+  if(!album||!artist)return;
+  clearErr();
+  const btn=$("btn-go"); btn.disabled=true; btn.textContent="Cekiliyor...";
+  try{
+    const [mb,wiki]=await Promise.all([fetchMB(album,artist).catch(()=>null), fetchWiki(album,artist).catch(()=>null)]);
+    const entry={
+      day:S.log.length+1,
+      album:(mb&&mb.title)||album, artist:(mb&&mb.artist)||artist,
+      rating:$("in-rating").value, energy:$("in-energy").value, mood:$("in-mood").value,
+      note:$("in-note").value.trim(),
+      date:new Date().toISOString().slice(0,10),
+      mb, wiki, cur:null, chat:[], labelMates:null
+    };
+    // chain material: label mates (one label, capped)
+    if(mb&&mb.labelIds&&mb.labelIds[0]){
+      await sleep(1100);
+      entry.labelMates=(await fetchLabelMates(mb.labelIds[0],mb.id)).slice(0,12);
+    }
+    S.log.push(entry); S.active=S.log.length-1; save(); render();
+    ["in-album","in-artist","in-rating","in-note"].forEach(id=>$(id).value="");
+    $("in-energy").value=""; $("in-mood").value="";
+  }catch(e){ showErr("Loglanamadi: "+e.message); }
+  finally{ btn.disabled=false; btn.textContent="Gunu Logla + Dossier Cek"; }
+}
+
+function removeEntry(i){
+  S.log.splice(i,1);
+  S.log.forEach((e,j)=>e.day=j+1); // recount days
+  if(S.active>=S.log.length)S.active=S.log.length?S.log.length-1:null;
   save(); render();
 }
 
-function setActive(k) { active = k; render(); }
+// ---------- Retro ----------
+function renderRetro(){
+  const p=$("pane-retro");
+  if(!S.log.length){ p.innerHTML='<div class="empty">Henuz log yok — korelasyon icin veri lazim.</div>'; return; }
+  const rows=S.log.map(e=>{
+    const g=(e.mb&&e.mb.genres&&e.mb.genres[0])||"?";
+    return {day:e.day,album:e.album,rating:parseFloat(e.rating)||null,energy:e.energy||"?",mood:e.mood||"?",genre:g};
+  });
+  // energy x genre counts
+  const cross={};
+  rows.forEach(r=>{ const k=r.energy+"|"+r.genre; cross[k]=(cross[k]||0)+1; });
+  const crossRows=Object.entries(cross).sort((a,b)=>b[1]-a[1]).slice(0,10)
+    .map(([k,v])=>{const [en,g]=k.split("|");return `<li><b>${esc(en)}</b> enerji → ${esc(g)} <span class="mono">×${v}</span></li>`;}).join("");
+  // avg rating by genre
+  const byG={};
+  rows.forEach(r=>{ if(r.rating==null)return; (byG[r.genre]=byG[r.genre]||[]).push(r.rating); });
+  const avgRows=Object.entries(byG).map(([g,arr])=>[g,(arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2),arr.length])
+    .sort((a,b)=>b[1]-a[1])
+    .map(([g,avg,n])=>`<li><b>${esc(g)}</b> → ort. <span class="rating mono">${avg}</span> <span class="mono" style="color:var(--faint)">(n=${n})</span></li>`).join("");
+  p.innerHTML=`
+    <div class="card"><div class="card-head"><span class="l">Log Tablosu</span><span class="h">${rows.length} gun</span></div>
+      <table><tr><th>Gun</th><th>Album</th><th>Puan</th><th>Enerji</th><th>Mood</th><th>Tur</th></tr>
+      ${rows.map(r=>`<tr><td class="mono">${r.day}</td><td>${esc(r.album)}</td><td class="rating mono">${r.rating??"—"}</td><td>${esc(r.energy)}</td><td>${esc(r.mood)}</td><td>${esc(r.genre)}</td></tr>`).join("")}
+      </table></div>
+    <div class="card"><div class="card-head"><span class="l">Enerji ↔ Tur</span><span class="h">en sik kombinasyonlar</span></div><ul>${crossRows||"<li>Veri az.</li>"}</ul>
+      <p class="note">n kucukken korelasyon degil anekdottur — 10+ gun olmadan sonuc cikarma.</p></div>
+    <div class="card"><div class="card-head"><span class="l">Tur ↔ Puan</span></div><ul>${avgRows||"<li>Puan girilmemis.</li>"}</ul></div>`;
+}
 
-// ---- Render ----
-function render() {
-  // sidebar
-  const list = Object.entries(archive).sort((a, b) => new Date(b[1].createdAt) - new Date(a[1].createdAt));
-  $("archive-list").innerHTML = list.length
-    ? list.map(([k, e]) => `
-        <button class="arc-item ${active === k ? "active" : ""}" onclick="setActive('${esc(k)}')">
-          ${esc(e.album)}<small>${esc(e.artist)}</small>
-        </button>`).join("")
-    : '<p style="font-size:12px;color:var(--faint)">Henuz dossier yok.</p>';
+// ---------- Export / Import ----------
+function exportLog(){
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="album-rituel-log.json"; a.click();
+}
+function importLog(ev){
+  const f=ev.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ S=JSON.parse(r.result); save(); render(); }catch(e){ showErr("Import basarisiz: gecersiz JSON."); } };
+  r.readAsText(f);
+}
 
-  // main
-  const d = $("dossier");
-  if (!active || !archive[active]) {
-    d.innerHTML = '<div class="empty">Bir albüm gir ya da arşivden seç.</div>';
-    return;
-  }
-  const e = archive[active];
-  const mb = e.mb, wiki = e.wiki;
+// ---------- Tabs & render ----------
+function switchTab(t){
+  ["debrief","retro","settings"].forEach(x=>{
+    $("pane-"+x).style.display=x===t?"block":"none";
+    $("tab-"+x).classList.toggle("on",x===t);
+  });
+  if(t==="retro")renderRetro();
+  if(t==="settings")$("in-key").value=getKey();
+}
 
-  d.innerHTML = `
+function render(){
+  const n=S.log.length, next=n+1, isWild=next%7===0;
+  const badge=$("day-badge");
+  badge.textContent=`Gun ${n} tamam · Sirada: Gun ${next}${isWild?" — WILDCARD":""}`;
+  badge.className="day-badge"+(isWild?" wild":"");
+
+  $("archive-list").innerHTML=S.log.length
+    ? S.log.slice().reverse().map((e)=>{
+        const i=S.log.indexOf(e);
+        return `<button class="arc-item ${S.active===i?"active":""}" onclick="S.active=${i};render()">
+          <span class="mono" style="color:var(--faint)">${e.day}.</span> ${esc(e.album)}<small>${esc(e.artist)}${e.rating?` · ${esc(e.rating)}/5`:""}</small></button>`;
+      }).join("")
+    : '<p style="font-size:12px;color:var(--faint)">Henuz log yok.</p>';
+
+  const d=$("dossier");
+  if(S.active==null||!S.log[S.active]){ d.innerHTML='<div class="empty">Gunu logla ya da soldan bir kayit sec.</div>'; return; }
+  const i=S.active, e=S.log[i], mb=e.mb, wiki=e.wiki;
+  const curSections=[["context","Donem & Baglam"],["lineage","Soy Hatti"],["musicalAnatomy","Muzikal Anatomi"],["lyricalWorld","Soz Dunyasi"],["backstage","Sahne Arkasi"]];
+
+  d.innerHTML=`
     <div class="head">
-      <div>
-        <p class="t display">${esc(e.album)}</p>
-        <p class="a">${esc(e.artist)}${mb && mb.firstDate ? ` <span class="mono">· ${esc(mb.firstDate)}</span>` : ""}</p>
+      <div><p class="t display">Gun ${e.day} — ${esc(e.album)}</p>
+      <p class="a">${esc(e.artist)}${mb&&mb.firstDate?` <span class="mono">· ${esc(mb.firstDate)}</span>`:""}${e.rating?` · <span class="rating">${esc(e.rating)}/5</span>`:""}${e.energy?` · enerji: ${esc(e.energy)}`:""}${e.mood?` · mood: ${esc(e.mood)}`:""}</p></div>
+      <button class="del" onclick="removeEntry(${i})">×</button>
+    </div>
+    ${e.note?`<div class="card"><div class="card-head"><span class="l">Debrief Notun</span><span class="h">${esc(e.date)}</span></div><p>${esc(e.note)}</p></div>`:""}
+    ${mb?`<div class="card"><div class="card-head"><span class="l">Kunye</span><span class="h">musicbrainz — kesin veri</span></div><ul>
+      ${mb.firstDate?`<li><b>Ilk yayin:</b> <span class="mono">${esc(mb.firstDate)}</span></li>`:""}
+      ${mb.labels.length?`<li><b>Label:</b> ${esc(mb.labels.join(", "))}</li>`:""}
+      ${mb.producers.length?`<li><b>Produktor:</b> ${esc(mb.producers.join(", "))}</li>`:""}
+      ${mb.engineers.length?`<li><b>Muhendislik/Mix:</b> ${esc(mb.engineers.join(", "))}</li>`:""}
+      </ul>${mb.genres.length?`<div style="margin-top:8px">${mb.genres.map(g=>`<span class="tag">${esc(g)}</span>`).join("")}</div>`:""}
+      <p class="src">Kaynak: <a href="${esc(mb.url)}" target="_blank" rel="noopener">MusicBrainz</a></p></div>`:""}
+    ${wiki&&wiki.extract?`<div class="card"><div class="card-head"><span class="l">Baglam Ozeti</span><span class="h">wikipedia</span></div><p>${esc(wiki.extract)}</p>
+      <p class="src">Kaynak: <a href="${esc(wiki.url)}" target="_blank" rel="noopener">${esc(wiki.title)}</a></p></div>`:""}
+    ${e.labelMates&&e.labelMates.length?`<div class="card"><div class="card-head"><span class="l">Zincir Malzemesi</span><span class="h">ayni label — donem komsulari</span></div><ul>
+      ${e.labelMates.map(m=>`<li>${esc(m.title)} — <b>${esc(m.artist)}</b>${m.date?` <span class="mono" style="color:var(--faint)">${esc(m.date.slice(0,4))}</span>`:""}</li>`).join("")}
+      </ul><p class="note">Bu liste oneri degil ham madde: ayni label = ayni A&R kulagi/scene. Yarinki zincir baglantisini buradan ya da produktor isminden kur.</p></div>`:""}
+    <div class="card">
+      <div class="card-head"><span class="l">Merak Katmani</span><span class="h">llm — kesin veriye baglanmis</span></div>
+      ${e.cur
+        ? curSections.map(([id,label])=>`<div style="margin-bottom:12px"><p style="font-size:12px;color:var(--gold);margin-bottom:4px">${label}</p><p>${esc(e.cur[id]||"—")}</p></div>`).join("")
+        : `<p style="margin-bottom:10px">Henuz uretilmedi. Kunye verisi modele "kesin veri" olarak verilir — produktor/tarih/label uydurma alani kapali.</p><button class="go" id="btn-cur" onclick="genCuriosity(${i})">Merak Katmanini Uret</button>`}
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="l">Sorgu Hatti</span><span class="h">bu albume dair her sey</span></div>
+      <div class="chat">${(e.chat||[]).map(m=>`<div class="msg ${m.role==="user"?"u":"a"}">${esc(m.content)}</div>`).join("")||'<p class="note">Ornek: "Sozlerdeki ofke kime yonelik?" / "Bu produksiyonu bugun kim kullaniyor?"</p>'}</div>
+      <div style="display:flex;gap:8px">
+        <input id="chat-in" placeholder="Sorunu yaz..." onkeydown="if(event.key==='Enter')ask(${i})" />
+        <button class="go" onclick="ask(${i})">Sor</button>
       </div>
-      <button class="del" onclick="removeEntry('${esc(active)}')" aria-label="Sil">×</button>
-    </div>
-
-    ${mb ? `
-    <div class="card">
-      <div class="card-head"><span class="l">Kunye</span><span class="h">musicbrainz — kesin veri</span></div>
-      <ul>
-        ${mb.firstDate ? `<li><b>Ilk yayin:</b> <span class="mono">${esc(mb.firstDate)}</span></li>` : ""}
-        ${mb.labels.length ? `<li><b>Label:</b> ${esc(mb.labels.join(", "))}</li>` : ""}
-        ${mb.producers.length ? `<li><b>Produktor:</b> ${esc(mb.producers.join(", "))}</li>` : ""}
-        ${mb.engineers.length ? `<li><b>Muhendislik/Mix:</b> ${esc(mb.engineers.join(", "))}</li>` : ""}
-      </ul>
-      ${mb.genres.length ? `<div style="margin-top:10px">${mb.genres.map((g) => `<span class="tag">${esc(g)}</span>`).join("")}</div>` : ""}
-      <p class="src">Kaynak: <a href="${esc(mb.url)}" target="_blank" rel="noopener">MusicBrainz</a> — produktor ismi buradan geliyorsa uydurma degildir; zincirleme onerilerinin ham maddesi.</p>
-    </div>` : ""}
-
-    ${wiki && wiki.extract ? `
-    <div class="card">
-      <div class="card-head"><span class="l">Baglam Ozeti</span><span class="h">wikipedia</span></div>
-      <p>${esc(wiki.extract)}</p>
-      <p class="src">Kaynak: <a href="${esc(wiki.url)}" target="_blank" rel="noopener">${esc(wiki.title)} — Wikipedia</a> · Derin okuma icin linke git; bu ozet giris paragrafi.</p>
-    </div>` : ""}
-
-    <div class="card">
-      <div class="card-head"><span class="l">Yorum Katmani</span><span class="h">manuel / llm</span></div>
-      <p>Bu MVP bilerek yorum uretmiyor — yukaridaki veri katmani kesin, yorum katmani ise ayri bir is.
-      Soz cozumlemesi ve donem analizi icin bu kunyeyi Claude sohbetine tasi: veriyi eline tutusturursan
-      halusinasyon alani kalmaz. v2'de buraya opsiyonel LLM entegrasyonu eklenebilir (kendi API key'inle).</p>
-    </div>
-  `;
+    </div>`;
 }
 
 render();
