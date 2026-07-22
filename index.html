@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Album Ritueli</title>
+<title>Albüm Ritüeli</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
   :root {
@@ -34,7 +34,7 @@
   .arc-item .meta span.t{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .arc-item small{display:block;font-size:10px;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .cover-thumb{width:26px;height:26px;border-radius:3px;object-fit:cover;flex-shrink:0;background:var(--hover)}
-  .cover-big{width:84px;height:84px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--border)}
+  .cover-big{width:var(--coversize,84px);height:var(--coversize,84px);border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--border)}
   .stamp{display:inline-block;transform:rotate(-5deg);border:1.5px solid var(--gold);color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:3px;opacity:.85}
   .stamp.wildstamp{border-color:var(--red);color:var(--red)}
   .side-foot{margin-top:auto;padding-top:16px;display:flex;gap:8px}
@@ -73,7 +73,8 @@
   .tag{display:inline-block;font-size:10px;color:var(--gold);border:1px solid var(--border);border-radius:3px;padding:1px 6px;margin:2px 3px 2px 0}
   .src{font-size:10px;color:var(--faint);margin-top:8px}.src a{color:var(--muted)}
   .empty{border:1px dashed var(--border);border-radius:8px;padding:36px;text-align:center;font-size:13px;color:var(--muted)}
-  .analysis{white-space:pre-wrap}
+  .analysis{white-space:pre-wrap;max-height:220px;overflow-y:auto;padding-right:6px}
+  body.nocover .cover-big{display:none}
   table{border-collapse:collapse;width:100%}
   th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--dash)}
   th{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--faint)}
@@ -85,7 +86,20 @@
 <body>
   <aside>
     <h2>Ritüel Logu</h2>
-    <span class="day-badge" id="day-badge"></span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+      <span class="day-badge" id="day-badge" style="margin-bottom:0"></span>
+      <span class="day-badge" id="streak-badge" style="margin-bottom:0;display:none"></span>
+    </div>
+    <p class="note" id="backup-warn" style="display:none;margin:0 0 10px;color:var(--red)"></p>
+    <input id="arc-search" placeholder="Ara: albüm, sanatçı, tür, etiket" style="margin-bottom:8px;font-size:12px;padding:6px 8px" oninput="render()" />
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <select id="arc-sort" onchange="render()" style="font-size:11px;padding:4px 6px;flex:1">
+        <option value="day">Sırala: Gün</option>
+        <option value="rating">Sırala: Puan</option>
+        <option value="valence">Sırala: Valence</option>
+      </select>
+      <button class="mini" onclick="openRandom()">Rastgele</button>
+    </div>
     <div id="archive-list" style="flex:1;overflow-y:auto"></div>
     <div class="side-foot">
       <button class="mini" onclick="exportLog()">Export</button>
@@ -94,8 +108,8 @@
     </div>
   </aside>
   <main>
-    <h1 class="display">Album Ritueli</h1>
-    <p class="sub">veri + log katmani · yorum katmani Claude sohbetinde yasar</p>
+    <h1 class="display">Albüm Ritüeli</h1>
+    <p class="sub">veri + log katmanı · yorum katmanı Claude sohbetinde yaşar</p>
 
     <div class="tabs">
       <button class="tab on" id="tab-debrief" onclick="switchTab('debrief')">Debrief</button>
@@ -109,8 +123,8 @@
     <div id="pane-debrief">
       <div class="form">
         <div class="row">
-          <div><label>Album</label><input id="in-album" placeholder="The Stone Roses" /></div>
-          <div><label>Sanatci</label><input id="in-artist" placeholder="The Stone Roses" /></div>
+          <div><label>Albüm</label><input id="in-album" placeholder="Leisure" /></div>
+          <div><label>Sanatçı</label><input id="in-artist" placeholder="Blur" /></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:start;margin-bottom:14px">
           <div>
@@ -127,15 +141,15 @@
               <line x1="4" y1="55" x2="106" y2="55" stroke="#3A342C" stroke-width="1"/>
               <text x="55" y="12" fill="#5A5348" font-size="7" text-anchor="middle">gergin</text>
               <text x="55" y="103" fill="#5A5348" font-size="7" text-anchor="middle">durgun</text>
-              <text x="8" y="58" fill="#5A5348" font-size="7">kotu</text>
+              <text x="8" y="58" fill="#5A5348" font-size="7">kötü</text>
               <text x="88" y="58" fill="#5A5348" font-size="7">iyi</text>
               <circle id="affect-dot" cx="55" cy="55" r="4" fill="#C9A24B"/>
             </svg>
-            <p class="note" id="affect-label" style="margin-top:6px;text-align:center;font-size:10px">Notr bolge.</p>
+            <p class="note" id="affect-label" style="margin-top:6px;text-align:center;font-size:10px">Nötr bölge.</p>
           </div>
         </div>
         <div class="row3">
-          <div><label>Uretkenlik (0-10, ops.)</label><input id="in-prod" type="number" min="0" max="10" placeholder="—" /></div>
+          <div><label>Üretkenlik (0-10, ops.)</label><input id="in-prod" type="number" min="0" max="10" placeholder="—" /></div>
           <div><label>Anksiyete (0-10, ops.)</label><input id="in-anx" type="number" min="0" max="10" placeholder="—" /></div>
           <div><label>Depresif hissiyat (0-10, ops.)</label><input id="in-dep" type="number" min="0" max="10" placeholder="—" /></div>
         </div>
@@ -143,18 +157,14 @@
           <label>Niyetlilik (opsiyonel)</label>
           <select id="in-intent">
             <option value="">—</option>
-            <option value="secim">Kendi secimim</option>
-            <option value="zincir">Zincir onerisi</option>
+            <option value="secim">Kendi seçimim</option>
+            <option value="zincir">Zincir önerisi</option>
             <option value="wildcard">Wildcard</option>
           </select>
         </div>
         <div style="margin-bottom:12px"><label>Not / reaksiyon</label><textarea id="in-note" placeholder="Kisa reaksiyon, one cikan sarkilar, akilda kalan..."></textarea></div>
-        <button class="go" id="btn-go" onclick="logDay()">Gunu Logla + Kunye Cek</button>
-        <p class="note">Kunye MusicBrainz'den, baglam ozeti Wikipedia'dan cekilir (~3-4 sn, rate limit geregi).
-        Derin analiz — donem, soy hatti, anatomi, soz dunyasi, trivia — Claude sohbetinde yapilir;
-        ciktiyi asagidaki "Claude Analizi" alanina yapistirip arsivleyebilirsin.
-        Uretkenlik/anksiyete/depresyon alanlari tamamen opsiyonel — doldurmamak da bir tercihtir,
-        bu bir klinik olcek degil, kaba bir iz.</p>
+        <button class="go" id="btn-go" onclick="logDay()">Günü Logla + Künye Çek</button>
+        <p class="note">Künye MusicBrainz'den, bağlam Wikipedia'dan otomatik gelir (~3-4 sn). Derin analiz sohbette — çıktıyı aşağıdaki alana yapıştır. Sağlık alanları opsiyonel; klinik ölçek değil, kaba iz.</p>
       </div>
       <div id="dossier"></div>
     </div>
@@ -164,40 +174,71 @@
 
     <!-- SETTINGS TAB -->
     <div id="pane-settings" style="display:none">
-      <div class="card"><div class="card-head"><span class="l">Gorunum</span><span class="h">tercihler bu tarayicida saklanir</span></div>
+      <div class="card"><div class="card-head"><span class="l">Görünüm</span><span class="h">tercihler bu tarayıcıda saklanır</span></div>
         <div class="row3" style="margin-bottom:0">
           <div><label>Mod</label>
             <select id="th-mode" onchange="saveTheme()">
               <option value="dark">Koyu</option>
-              <option value="light">Acik</option>
+              <option value="light">Açık</option>
             </select>
           </div>
           <div><label>Vurgu rengi</label>
             <select id="th-accent" onchange="saveTheme()">
-              <option value="#C9A24B">Altin (varsayilan)</option>
+              <option value="#C9A24B">Altın (varsayılan)</option>
               <option value="#7FA8A0">Deniz camı</option>
-              <option value="#B0784A">Bakir</option>
+              <option value="#B0784A">Bakır</option>
               <option value="#8FA86B">Zeytin</option>
               <option value="#A583B5">Leylak</option>
               <option value="#C9704B">Kiremit</option>
             </select>
           </div>
-          <div><label>Yogunluk</label>
+          <div><label>Yoğunluk</label>
             <select id="th-density" onchange="saveTheme()">
               <option value="normal">Normal</option>
-              <option value="compact">Sikisik</option>
+              <option value="compact">Sıkışık</option>
             </select>
           </div>
         </div>
+        <div class="row3" style="margin-top:12px;margin-bottom:0">
+          <div><label>Wildcard aralığı (gün, ±2 sürpriz)</label><input id="th-wild" type="number" min="2" max="30" onchange="localStorage.setItem('wildN',this.value||'7');localStorage.removeItem('nextWild');render()" /></div>
+          <div><label>Başlangıç sekmesi</label>
+            <select id="th-start" onchange="localStorage.setItem('startTab',this.value)">
+              <option value="debrief">Debrief</option>
+              <option value="retro">Geriye Bak</option>
+            </select>
+          </div>
+          <div><label>Highlight sayısı (5-15)</label><input id="th-hl" type="number" min="5" max="15" onchange="localStorage.setItem('hlN',this.value||'8');render()" /></div>
+        </div>
+        <div class="row3" style="margin-top:12px;margin-bottom:0">
+          <div><label>Kapak boyutu</label>
+            <select id="th-cover" onchange="saveTheme()">
+              <option value="60">Küçük</option>
+              <option value="84">Orta</option>
+              <option value="120">Büyük</option>
+              <option value="hide">Gizle</option>
+            </select>
+          </div>
+          <div><label>Font ölçeği</label>
+            <select id="th-font" onchange="saveTheme()">
+              <option value="90">%90</option>
+              <option value="100">%100</option>
+              <option value="110">%110</option>
+            </select>
+          </div>
+          <div></div>
+        </div>
       </div>
-      <div class="card"><div class="card-head"><span class="l">Merak Filtresi</span><span class="h">kategorili — kok yazmak yeterli (sampl → sampled/sampling)</span></div>
+      <div class="card"><div class="card-head"><span class="l">Wikipedia Bölümleri</span><span class="h">işareti kalkan bölüm highlight taramasına girmez</span></div>
+        <div id="wiki-secs" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px"></div>
+      </div>
+      <div class="card"><div class="card-head"><span class="l">Merak Filtresi</span><span class="h">kategorili — kök yazmak yeterli</span></div>
         <div style="display:grid;gap:10px">
           <div><label>Drama / trivia (×3)</label><textarea id="kw-drama" style="min-height:40px;font-size:11px"></textarea></div>
-          <div><label>Soz / anlam (×3)</label><textarea id="kw-lyric" style="min-height:40px;font-size:11px"></textarea></div>
-          <div><label>Produksiyon sirlari (×2)</label><textarea id="kw-prod" style="min-height:40px;font-size:11px"></textarea></div>
-          <div><label>Soy hatti (×2)</label><textarea id="kw-lineage" style="min-height:40px;font-size:11px"></textarea></div>
+          <div><label>Söz / anlam (×3)</label><textarea id="kw-lyric" style="min-height:40px;font-size:11px"></textarea></div>
+          <div><label>Prodüksiyon sırları (×2)</label><textarea id="kw-prod" style="min-height:40px;font-size:11px"></textarea></div>
+          <div><label>Soy hattı (×2)</label><textarea id="kw-lineage" style="min-height:40px;font-size:11px"></textarea></div>
           <div><label>Genel (×1)</label><textarea id="kw-general" style="min-height:40px;font-size:11px"></textarea></div>
-          <div><label>Negatif — bu kelimeleri iceren cumleler ASLA gosterilmez</label><textarea id="kw-negative" style="min-height:40px;font-size:11px"></textarea></div>
+          <div><label>Negatif — bu kelimeleri içeren cümleler asla gösterilmez</label><textarea id="kw-negative" style="min-height:40px;font-size:11px"></textarea></div>
         </div>
         <button class="go" style="margin-top:10px" onclick="saveKw2()">Kaydet</button>
       </div>
@@ -299,11 +340,11 @@ function saveGproxy(){ localStorage.setItem("genius-proxy",$("in-gproxy").value.
 async function genGenius(i){
   const e=S.log[i]; if(!e)return;
   const base=gproxy();
-  if(!base){ showErr("Genius proxy URL'i girilmemis — Debrief sekmesinin altindaki alana Worker adresini yaz."); return; }
+  if(!base){ showErr("Genius proxy URL'i girilmemiş — Ayarlar'dan Worker adresini gir."); return; }
   const allTracks=((e.mb||{}).tracks)||[];
-  if(!allTracks.length){ showErr("Tracklist yok — Genius sarki bazli calisir, once albumu (yeniden) logla ki tracklist gelsin."); return; }
+  if(!allTracks.length){ showErr("Tracklist yok — önce albümü (yeniden) logla."); return; }
   clearErr();
-  const btn=$("btn-genius"); if(btn){btn.disabled=true;btn.textContent="Cekiliyor...";}
+  const btn=$("btn-genius"); if(btn){btn.disabled=true;btn.textContent="Çekiliyor...";}
   try{
     // kalpli sarkilar oncelikli, yoksa ilk sarkilar; en fazla 3 sarki
     const ordered=[...allTracks.filter(t=>t.liked),...allTracks.filter(t=>!t.liked)].slice(0,3);
@@ -332,14 +373,35 @@ async function genGenius(i){
       await sleep(400);
     }
     e.genius=out; save(); render();
-  }catch(err){ showErr("Genius cekilemedi: "+err.message+" (Worker calisiyormu / token dogru mu?)"); }
+  }catch(err){ showErr("Genius çekilemedi: "+err.message+" (Worker çalışıyor mu / token doğru mu?)"); }
 }
 
-// ---------- Likes ----------
+// ---------- Likes / Stars ----------
 function toggleLike(i,ti){
   const t=(((S.log[i]||{}).mb||{}).tracks||[])[ti];
   if(!t)return; t.liked=!t.liked; save(); render();
 }
+function toggleStar(i,ti){
+  const t=(((S.log[i]||{}).mb||{}).tracks||[])[ti];
+  if(!t)return; t.star=!t.star; save(); render();
+}
+function wildInterval(){ return Math.max(2,parseInt(localStorage.getItem("wildN")||"7",10)||7); }
+function rollNextWild(fromDay){
+  const n=wildInterval();
+  const jitter=Math.floor(Math.random()*5)-2; // -2..+2
+  const nw=Math.max(fromDay+2,fromDay+n+jitter);
+  localStorage.setItem("nextWild",String(nw));
+  return nw;
+}
+function nextWildDay(){
+  let v=parseInt(localStorage.getItem("nextWild")||"0",10);
+  if(!v)v=rollNextWild(S.log.length?S.log[S.log.length-1].day:0);
+  return v;
+}
+function openRandom(){ if(!S.log.length)return; S.active=Math.floor(Math.random()*S.log.length); render(); }
+const openTracks=new Set();
+function toggleTracks(i){ if(openTracks.has(i))openTracks.delete(i); else openTracks.add(i); render(); }
+function hlCount(){ const v=parseInt(localStorage.getItem("hlN")||"8",10); return Math.min(15,Math.max(5,v||8)); }
 const fmtLen=(ms)=>ms?`${Math.floor(ms/60000)}:${String(Math.floor((ms%60000)/1000)).padStart(2,"0")}`:"";
 
 // ---------- Wiki highlights: kategorili + agirlikli + negatif liste ----------
@@ -375,13 +437,20 @@ function sectionWeight(sec){
   for(const k in SECTION_WEIGHT) if(s.startsWith(k)) return SECTION_WEIGHT[k];
   return 1;
 }
+const WIKI_SECTIONS=["Background","Recording","Composition","Music","Lyrics","Themes","Release","Reception","Legacy","Influence"];
+function wikiSecsOff(){
+  try{ return JSON.parse(localStorage.getItem("wikiSecsOff")||"[]"); }catch(e){ return []; }
+}
 function extractHighlights(wiki){
   if(!wiki||!wiki.sections)return [];
   const kw=getKw2();
   const neg=parseList(kw.negative);
+  const off=wikiSecsOff().map(x=>x.toLowerCase());
   const cats={}; for(const k in KW_DEFAULTS) cats[k]=parseList(kw[k]);
   const out=[];
   Object.entries(wiki.sections).forEach(([sec,txt])=>{
+    const secLow=sec.toLowerCase();
+    if(off.some(o=>secLow.includes(o)))return; // bolum kapali
     const sw=sectionWeight(sec);
     txt.split(/(?<=[.!?])\s+/).forEach(sent=>{
       if(sent.length<60||sent.length>420)return;
@@ -398,7 +467,7 @@ function extractHighlights(wiki){
       if(score>0)out.push({sec,cat:KW_LABELS[best],sent:sent.trim(),score:score*sw});
     });
   });
-  return out.sort((a,b)=>b.score-a.score).slice(0,8);
+  return out.sort((a,b)=>b.score-a.score).slice(0,hlCount());
 }
 
 function updateAffect(){
@@ -407,10 +476,10 @@ function updateAffect(){
   const cx=4+((v-1)/9)*102, cy=106-((a-1)/9)*102;
   const dot=$("affect-dot"); if(dot){ dot.setAttribute("cx",cx); dot.setAttribute("cy",cy); }
   let label;
-  if(v>=6&&a>=6)label="Heyecanli / cosku dolu bolge.";
-  else if(v>=6&&a<6)label="Sakin / huzurlu bolge.";
-  else if(v<6&&a>=6)label="Gergin / tedirgin bolge.";
-  else label="Bitkin / dusuk enerjili bolge.";
+  if(v>=6&&a>=6)label="Heyecanlı / coşku dolu bölge.";
+  else if(v>=6&&a<6)label="Sakin / huzurlu bölge.";
+  else if(v<6&&a>=6)label="Gergin / tedirgin bölge.";
+  else label="Bitkin / düşük enerjili bölge.";
   const lbl=$("affect-label"); if(lbl)lbl.textContent=label;
 }
 document.addEventListener("DOMContentLoaded",updateAffect);
@@ -421,7 +490,7 @@ async function logDay(){
   const album=$("in-album").value.trim(), artist=$("in-artist").value.trim();
   if(!album||!artist)return;
   clearErr();
-  const btn=$("btn-go"); btn.disabled=true; btn.textContent="Cekiliyor...";
+  const btn=$("btn-go"); btn.disabled=true; btn.textContent="Çekiliyor...";
   try{
     const [mb,wiki]=await Promise.all([fetchMB(album,artist).catch(()=>null), fetchWiki(album,artist).catch(()=>null)]);
     const entry={
@@ -439,11 +508,13 @@ async function logDay(){
       await sleep(1100);
       entry.labelMates=(await fetchLabelMates(mb.labelIds[0],mb.id)).slice(0,12);
     }
+    if(entry.day>=nextWildDay()){ entry.wild=true; rollNextWild(entry.day); }
     S.log.push(entry); S.active=S.log.length-1; save(); render();
+    if(S.log.length%7===0)exportLog(); // otomatik yedek: 7 kayitta bir, her sey dahil
     ["in-album","in-artist","in-rating","in-note","in-prod","in-anx","in-dep"].forEach(id=>$(id).value="");
     $("in-intent").value=""; $("in-valence").value=5; $("in-arousal").value=5; updateAffect();
-  }catch(e){ showErr("Loglanamadi: "+e.message); }
-  finally{ btn.disabled=false; btn.textContent="Gunu Logla + Kunye Cek"; }
+  }catch(e){ showErr("Loglanamadı: "+e.message); }
+  finally{ btn.disabled=false; btn.textContent="Günü Logla + Künye Çek"; }
 }
 
 function saveAnalysis(i){
@@ -470,7 +541,7 @@ function pearson(xs,ys){
 }
 function renderRetro(){
   const p=$("pane-retro");
-  if(!S.log.length){ p.innerHTML='<div class="empty">Henuz log yok — korelasyon icin veri lazim.</div>'; return; }
+  if(!S.log.length){ p.innerHTML='<div class="empty">Henüz kayıt yok — korelasyon için veri lazım.</div>'; return; }
   const rows=S.log.map(e=>{
     const g=(e.mb&&e.mb.genres&&e.mb.genres[0])||"?";
     return {
@@ -503,7 +574,7 @@ function renderRetro(){
   const depValid=rows.filter(r=>!isNaN(r.depression)&&!isNaN(r.rating));
   const rDep=pearson(depValid.map(r=>r.depression),depValid.map(r=>r.rating));
   const corrLine=(label,r,n)=>r==null?`<li><b>${label}</b> ↔ puan → yetersiz veri (n=${n})</li>`
-    :`<li><b>${label}</b> ↔ puan → <span class="mono">r=${r.toFixed(2)}</span> ${Math.abs(r)<0.2?"(zayif/yok)":Math.abs(r)<0.5?"(orta)":"(guclu)"} <span class="mono" style="color:var(--faint)">(n=${n})</span></li>`;
+    :`<li><b>${label}</b> ↔ puan → <span class="mono">r=${r.toFixed(2)}</span> ${Math.abs(r)<0.2?"(zayıf/yok)":Math.abs(r)<0.5?"(orta)":"(güçlü)"} <span class="mono" style="color:var(--faint)">(n=${n})</span></li>`;
   // intent breakdown
   const byI={};
   rows.forEach(r=>{ if(r.intent==="?"||isNaN(r.rating))return; (byI[r.intent]=byI[r.intent]||[]).push(r.rating); });
@@ -517,26 +588,26 @@ function renderRetro(){
       ...(((e.mb||{}).producers||[]).map(pname).filter(x=>pp.has(x)).map(x=>"prod: "+x)),
       ...(((e.mb||{}).labels||[]).filter(x=>((prev.mb||{}).labels||[]).includes(x)).map(x=>"label: "+x))
     ];
-    const isW=e.day%7===0;
-    const link=isW?'<span style="color:var(--red)">⟂ wildcard</span>':(shared.length?`<span style="color:var(--gold)">→ ${esc(shared.join(" · "))}</span>`:'<span style="color:var(--faint)">→ veri baglantisi yok (zincir sebebin sohbette)</span>');
+    const isW=!!e.wild;
+    const link=isW?'<span style="color:var(--red)">⟂ wildcard</span>':(shared.length?`<span style="color:var(--gold)">→ ${esc(shared.join(" · "))}</span>`:'<span style="color:var(--faint)">→ veri bağlantısı yok (zincir sebebin sohbette)</span>');
     return `<li>${link}<br><span class="mono" style="color:var(--faint)">${e.day}.</span> <b>${esc(e.album)}</b> — ${esc(e.artist)}</li>`;
   }).join("");
-  const liked=[];
-  S.log.forEach(e=>(((e.mb||{}).tracks)||[]).forEach(t=>{ if(t.liked)liked.push({song:t.title,album:e.album,day:e.day}); }));
+  const picks=[];
+  S.log.forEach(e=>(((e.mb||{}).tracks)||[]).forEach(t=>{ if(t.star||t.liked)picks.push({song:t.title,album:e.album,day:e.day,star:!!t.star,liked:!!t.liked}); }));
   p.innerHTML=`
-    <div class="card"><div class="card-head"><span class="l">Zincir Gorunumu</span><span class="h">gunler arasi baglanti</span></div><ul>${chainRows||"<li>Log bos.</li>"}</ul></div>
-    ${liked.length?`<div class="card"><div class="card-head"><span class="l">Kalpli Sarkilar</span><span class="h">${liked.length} sarki — playlist hammaddesi</span></div><ul>
-      ${liked.map(l=>`<li>♥ <b>${esc(l.song)}</b> — ${esc(l.album)} <span class="mono" style="color:var(--faint)">g${l.day}</span></li>`).join("")}</ul></div>`:""}
-    <div class="card"><div class="card-head"><span class="l">Log Tablosu</span><span class="h">${rows.length} gun</span></div>
-      <table><tr><th>Gun</th><th>Album</th><th>Puan</th><th>Valence</th><th>Arousal</th><th>Tur</th></tr>
+    <div class="card"><div class="card-head"><span class="l">Zincir Görünümü</span><span class="h">günler arası bağlantı</span></div><ul>${chainRows||"<li>Log boş.</li>"}</ul></div>
+    ${picks.length?`<div class="card"><div class="card-head"><span class="l">Seçilmiş Şarkılar</span><span class="h">${picks.length} şarkı — ★ masterpiece · ♥ wow</span></div><ul>
+      ${picks.sort((a,b)=>(b.star-a.star)).map(l=>`<li>${l.star?'<span style="color:var(--gold)">★</span> ':""}${l.liked?'<span style="color:var(--red)">♥</span> ':""}<b>${esc(l.song)}</b> — ${esc(l.album)} <span class="mono" style="color:var(--faint)">g${l.day}</span></li>`).join("")}</ul></div>`:""}
+    <div class="card"><div class="card-head"><span class="l">Log Tablosu</span><span class="h">${rows.length} gün</span></div>
+      <table><tr><th>Gün</th><th>Album</th><th>Puan</th><th>Valence</th><th>Arousal</th><th>Tür</th></tr>
       ${rows.map(r=>`<tr><td class="mono">${r.day}</td><td>${esc(r.album)}</td><td class="rating mono">${isNaN(r.rating)?"—":r.rating}</td><td class="mono">${isNaN(r.valence)?"—":r.valence}</td><td class="mono">${isNaN(r.arousal)?"—":r.arousal}</td><td>${esc(r.genre)}</td></tr>`).join("")}
       </table>
-      <p class="note">Haftalik/aylik "geriye bak" analizi icin bu tabloyu (ya da Export JSON'u) Claude sohbetine yapistir — korelasyon yorumunu orada yapariz.</p></div>
+      <p class="note">Haftalık/aylık "geriye bak" için bu tabloyu ya da Export JSON'u sohbete yapıştır — yorumu orada yaparız.</p></div>
     <div class="card"><div class="card-head"><span class="l">Valence/Arousal ↔ Puan</span><span class="h">pearson r</span></div><ul>
       ${corrLine("Valence",rV,valid.length)}${corrLine("Arousal",rA,valid.length)}${corrLine("Uretkenlik",rProd,painValid.length)}${corrLine("Anksiyete",rAnx,anxValid.length)}${corrLine("Depresif hissiyat",rDep,depValid.length)}</ul>
-      <p class="note">n<10'da r degeri gurultuye cok duyarli — yorum yapmadan once veri biriktir.</p></div>
-    <div class="card"><div class="card-head"><span class="l">Tur ↔ Valence/Arousal/Puan</span></div><ul>${genreRows||"<li>Veri az.</li>"}</ul></div>
-    ${intentRows?`<div class="card"><div class="card-head"><span class="l">Niyetlilik ↔ Puan</span><span class="h">kendi secim vs zincir vs wildcard</span></div><ul>${intentRows}</ul></div>`:""}`;
+      <p class="note">n<10'da r gürültüye çok duyarlı — önce veri biriktir.</p></div>
+    <div class="card"><div class="card-head"><span class="l">Tür ↔ Valence/Arousal/Puan</span></div><ul>${genreRows||"<li>Veri az.</li>"}</ul></div>
+    ${intentRows?`<div class="card"><div class="card-head"><span class="l">Niyetlilik ↔ Puan</span><span class="h">kendi seçim vs zincir vs wildcard</span></div><ul>${intentRows}</ul></div>`:""}`;
 }
 
 // ---------- Export / Import ----------
@@ -544,11 +615,13 @@ function exportLog(){
   const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob); a.download="album-rituel-log.json"; a.click();
+  localStorage.setItem("lastExport",String(Date.now()));
+  render();
 }
 function importLog(ev){
   const f=ev.target.files[0]; if(!f)return;
   const r=new FileReader();
-  r.onload=()=>{ try{ S=JSON.parse(r.result); save(); render(); }catch(e){ showErr("Import basarisiz: gecersiz JSON."); } };
+  r.onload=()=>{ try{ S=JSON.parse(r.result); save(); render(); }catch(e){ showErr("Import başarısız: geçersiz JSON."); } };
   r.readAsText(f);
 }
 
@@ -560,6 +633,9 @@ function applyTheme(){
   const t=getTheme();
   document.body.classList.toggle("light",t.mode==="light");
   document.body.classList.toggle("compact",t.density==="compact");
+  document.body.classList.toggle("nocover",t.cover==="hide");
+  document.documentElement.style.setProperty("--coversize",(t.cover&&t.cover!=="hide"?t.cover:"84")+"px");
+  document.body.style.zoom=(parseInt(t.font||"100",10)/100);
   const root=document.documentElement.style;
   const accent=t.accent||"#C9A24B";
   root.setProperty("--gold",accent);
@@ -570,15 +646,32 @@ function applyTheme(){
   root.setProperty("--gold-h",`rgb(${r},${g},${b})`);
 }
 function saveTheme(){
-  const t={mode:$("th-mode").value,accent:$("th-accent").value,density:$("th-density").value};
+  const t={mode:$("th-mode").value,accent:$("th-accent").value,density:$("th-density").value,
+    cover:$("th-cover")?$("th-cover").value:"84",font:$("th-font")?$("th-font").value:"100"};
   localStorage.setItem("theme",JSON.stringify(t));
   applyTheme();
+}
+function saveWikiSecs(){
+  const off=[...document.querySelectorAll("#wiki-secs input")].filter(c=>!c.checked).map(c=>c.value);
+  localStorage.setItem("wikiSecsOff",JSON.stringify(off));
+  render();
 }
 function restoreSettingsInputs(){
   const t=getTheme();
   if($("th-mode"))$("th-mode").value=t.mode||"dark";
   if($("th-accent"))$("th-accent").value=t.accent||"#C9A24B";
   if($("th-density"))$("th-density").value=t.density||"normal";
+  if($("th-wild"))$("th-wild").value=wildInterval();
+  if($("th-start"))$("th-start").value=localStorage.getItem("startTab")||"debrief";
+  if($("th-hl"))$("th-hl").value=hlCount();
+  if($("th-cover"))$("th-cover").value=t.cover||"84";
+  if($("th-font"))$("th-font").value=t.font||"100";
+  const ws=$("wiki-secs");
+  if(ws){
+    const off=wikiSecsOff();
+    ws.innerHTML=WIKI_SECTIONS.map(s=>`<label style="display:flex;gap:6px;align-items:center;font-size:11px;text-transform:none;letter-spacing:0;color:var(--body)">
+      <input type="checkbox" value="${s}" ${off.includes(s)?"":"checked"} onchange="saveWikiSecs()" style="width:auto" /> ${s}</label>`).join("");
+  }
   const gp=$("in-gproxy"); if(gp)gp.value=gproxy();
   const kw=getKw2();
   for(const k in KW_DEFAULTS){ const el=$("kw-"+k); if(el)el.value=kw[k]; }
@@ -597,23 +690,51 @@ function switchTab(t){
 }
 
 function render(){
-  const n=S.log.length, next=n+1, isWild=next%7===0;
+  const n=S.log.length, next=n+1;
   const badge=$("day-badge");
-  badge.textContent=`Gun ${n} tamam · Sirada: Gun ${next}${isWild?" — WILDCARD":""}`;
-  badge.className="day-badge"+(isWild?" wild":"");
+  badge.textContent=`Gün ${n} tamam · Sırada: Gün ${next}`;
+  badge.className="day-badge";
 
-  $("archive-list").innerHTML=S.log.length
-    ? S.log.slice().reverse().map((e)=>{
+  // streak: ardisik takvim gunleri
+  const dates=[...new Set(S.log.map(e=>e.date))].sort();
+  let streak=0;
+  if(dates.length){
+    streak=1;
+    for(let k=dates.length-1;k>0;k--){
+      if((new Date(dates[k])-new Date(dates[k-1]))/86400000===1)streak++; else break;
+    }
+  }
+  const sb=$("streak-badge");
+  if(sb){ if(streak>1){sb.style.display="inline-block";sb.textContent=`seri: ${streak} gün`;} else sb.style.display="none"; }
+
+  // yedek uyarisi
+  const bw=$("backup-warn");
+  if(bw){
+    const last=parseInt(localStorage.getItem("lastExport")||"0",10);
+    const stale=S.log.length&&(!last||Date.now()-last>7*86400000);
+    bw.style.display=stale?"block":"none";
+    if(stale)bw.textContent="Son yedekten 7+ gün geçti — Export'a bas.";
+  }
+
+  // arsiv: arama + siralama
+  const q=(($("arc-search")||{}).value||"").toLowerCase().trim();
+  const sortBy=(($("arc-sort")||{}).value)||"day";
+  let list=S.log.slice();
+  if(q)list=list.filter(e=>[e.album,e.artist,((e.mb||{}).genres||[]).join(" "),(e.tags||"")].join(" ").toLowerCase().includes(q));
+  list.sort((a,b)=>sortBy==="day"?b.day-a.day:((parseFloat(b[sortBy])||0)-(parseFloat(a[sortBy])||0)));
+
+  $("archive-list").innerHTML=list.length
+    ? list.map((e)=>{
         const i=S.log.indexOf(e);
         const cov=e.mb&&e.mb.id?`https://coverartarchive.org/release-group/${e.mb.id}/front-250`:null;
         return `<button class="arc-item ${S.active===i?"active":""}" onclick="S.active=${i};render()">
           ${cov?`<img class="cover-thumb" src="${cov}" loading="lazy" onerror="this.style.visibility='hidden'" alt="" />`:'<span class="cover-thumb"></span>'}
           <span class="meta"><span class="t"><span class="mono" style="color:var(--faint)">${e.day}.</span> ${esc(e.album)}</span><small>${esc(e.artist)}${e.rating?` · ${esc(e.rating)}/5`:""}</small></span></button>`;
       }).join("")
-    : '<p style="font-size:12px;color:var(--faint)">Henuz log yok.</p>';
+    : (S.log.length?'<p style="font-size:12px;color:var(--faint)">Aramayla eşleşen kayıt yok.</p>':'<p style="font-size:12px;color:var(--faint)">İlk albümü logla — sayaç başlasın.</p>');
 
   const d=$("dossier");
-  if(S.active==null||!S.log[S.active]){ d.innerHTML='<div class="empty">Gunu logla ya da soldan bir kayit sec.</div>'; return; }
+  if(S.active==null||!S.log[S.active]){ d.innerHTML='<div class="empty">Günü logla ya da arşivden bir kayıt seç.</div>'; return; }
   const i=S.active, e=S.log[i], mb=e.mb, wiki=e.wiki;
 
   d.innerHTML=`
@@ -621,7 +742,7 @@ function render(){
       <div style="display:flex;gap:16px;align-items:flex-start">
         ${mb&&mb.id?`<img class="cover-big" src="https://coverartarchive.org/release-group/${mb.id}/front-250" onerror="this.style.display='none'" alt="" />`:""}
         <div>
-          <span class="stamp${e.day%7===0?" wildstamp":""}">Gun ${e.day}${e.day%7===0?" · wildcard":""}</span>
+          <span class="stamp${e.wild?" wildstamp":""}">Gün ${e.day}${e.wild?" · wildcard":""}</span>
           <p class="t display" style="margin-top:8px">${esc(e.album)}</p>
       <p class="a">${esc(e.artist)}${mb&&mb.firstDate?` <span class="mono">· ${esc(mb.firstDate)}</span>`:""}${e.rating?` · <span class="rating">${esc(e.rating)}/5</span>`:""}${e.valence?` · valence: ${esc(e.valence)}`:""}${e.arousal?` · arousal: ${esc(e.arousal)}`:""}${e.productivity?` · uretkenlik: ${esc(e.productivity)}`:""}${e.anxiety?` · anksiyete: ${esc(e.anxiety)}`:""}${e.depression?` · depresif: ${esc(e.depression)}`:""}${e.intent?` · ${esc(e.intent)}`:""}</p>
         </div>
@@ -629,46 +750,59 @@ function render(){
       <button class="del" onclick="removeEntry(${i})">×</button>
     </div>
     ${e.note?`<div class="card"><div class="card-head"><span class="l">Debrief Notun</span><span class="h">${esc(e.date)}</span></div><p>${esc(e.note)}</p></div>`:""}
-    ${mb?`<div class="card"><div class="card-head"><span class="l">Kunye</span><span class="h">musicbrainz — kesin veri</span></div><ul>
-      ${mb.firstDate?`<li><b>Ilk yayin:</b> <span class="mono">${esc(mb.firstDate)}</span></li>`:""}
+    ${mb?`<div class="card"><div class="card-head"><span class="l">Künye</span><span class="h">musicbrainz — kesin veri</span></div><ul>
+      ${mb.firstDate?`<li><b>İlk yayın:</b> <span class="mono">${esc(mb.firstDate)}</span></li>`:""}
       ${mb.labels.length?`<li><b>Label:</b> ${esc(mb.labels.join(", "))}</li>`:""}
-      ${mb.producers.length?`<li><b>Produktor:</b> ${esc(mb.producers.map(pname).join(", "))}</li>`:""}
-      ${mb.engineers.length?`<li><b>Muhendislik/Mix:</b> ${esc(mb.engineers.join(", "))}</li>`:""}
+      ${mb.producers.length?`<li><b>Prodüktör:</b> ${esc(mb.producers.map(pname).join(", "))}</li>`:""}
+      ${mb.engineers.length?`<li><b>Mühendislik/Mix:</b> ${esc(mb.engineers.join(", "))}</li>`:""}
       </ul>${mb.genres.length?`<div style="margin-top:8px">${mb.genres.map(g=>`<span class="tag">${esc(g)}</span>`).join("")}</div>`:""}
       <p class="src">Kaynak: <a href="${esc(mb.url)}" target="_blank" rel="noopener">MusicBrainz</a></p></div>`:""}
-    ${mb&&(mb.tracks||[]).length?`<div class="card"><div class="card-head"><span class="l">Tracklist</span><span class="h">kalple — arsive islenir</span></div><ul>
-      ${mb.tracks.map((t,ti)=>`<li style="display:flex;align-items:center;gap:8px">
-        <button onclick="toggleLike(${i},${ti})" style="background:none;border:none;cursor:pointer;font-size:14px;color:${t.liked?"var(--red)":"var(--faint)"}">${t.liked?"♥":"♡"}</button>
+    ${mb&&(mb.tracks||[]).length?`<div class="card"><div class="card-head"><span class="l">Tracklist</span>
+      <button class="mini" onclick="toggleTracks(${i})">${openTracks.has(i)?"Gizle":"Göster ("+mb.tracks.length+")"}</button>
+      <span class="h">★ masterpiece · ♥ wow</span></div>
+      ${openTracks.has(i)?`<ul>
+      ${mb.tracks.map((t,ti)=>`<li style="display:flex;align-items:center;gap:6px">
+        <button onclick="toggleStar(${i},${ti})" title="masterpiece" style="background:none;border:none;cursor:pointer;font-size:14px;color:${t.star?"var(--gold)":"var(--faint)"}">${t.star?"★":"☆"}</button>
+        <button onclick="toggleLike(${i},${ti})" title="wow" style="background:none;border:none;cursor:pointer;font-size:14px;color:${t.liked?"var(--red)":"var(--faint)"}">${t.liked?"♥":"♡"}</button>
         <span style="flex:1">${esc(t.title)}</span>
         ${t.length?`<span class="mono" style="color:var(--faint);font-size:11px">${fmtLen(t.length)}</span>`:""}
-      </li>`).join("")}</ul></div>`:""}
-    ${wiki&&wiki.extract?`<div class="card"><div class="card-head"><span class="l">Baglam Ozeti</span><span class="h">wikipedia — giris</span></div><p>${esc(wiki.extract)}</p>
+      </li>`).join("")}</ul>`:`<p class="note" style="margin-top:0">${mb.tracks.filter(t=>t.star||t.liked).length?mb.tracks.filter(t=>t.star).length+" ★ · "+mb.tracks.filter(t=>t.liked).length+" ♥ işaretli":"Katlanmış — işaretlemek için aç."}</p>`}
+    </div>`:""}
+    ${wiki&&wiki.extract?`<div class="card"><div class="card-head"><span class="l">Bağlam Özeti</span><span class="h">wikipedia — giriş</span></div><p>${esc(wiki.extract)}</p>
       <p class="src">Kaynak: <a href="${esc(wiki.url)}" target="_blank" rel="noopener">${esc(wiki.title)}</a></p></div>`:""}
     ${(()=>{const hl=extractHighlights(wiki);return hl.length?`<div class="card"><div class="card-head"><span class="l">Highlight'lar</span><span class="h">wikipedia — merak filtreli</span></div><ul>
       ${hl.map(h=>`<li><span class="tag">${esc(h.sec)}${h.cat?` · ${esc(h.cat)}`:""}</span> ${esc(h.sent)}</li>`).join("")}</ul>
-      <p class="note">Filtre anahtar kelimeyle calisir, anlamla degil — kacirilan seyler icin makale linki yukarida, derin yorum sohbette.</p></div>`:""})()}
-    ${e.labelMates&&e.labelMates.length?`<div class="card"><div class="card-head"><span class="l">Zincir Malzemesi</span><span class="h">ayni label — donem komsulari</span></div><ul>
+      <p class="note">Filtre kelimeyle çalışır, anlamla değil — kaçanlar için makale linki yukarıda, derin yorum sohbette.</p></div>`:""})()}
+    ${e.labelMates&&e.labelMates.length?`<div class="card"><div class="card-head"><span class="l">Zincir Malzemesi</span><span class="h">aynı label — dönem komşuları</span></div><ul>
       ${e.labelMates.map(m=>`<li>${esc(m.title)} — <b>${esc(m.artist)}</b>${m.date?` <span class="mono" style="color:var(--faint)">${esc(m.date.slice(0,4))}</span>`:""}</li>`).join("")}
-      </ul><p class="note">Bu liste oneri degil ham madde: ayni label = ayni A&R kulagi/scene. Yarinki zincir baglantisini Claude sohbetinde bu veriyle kur.</p></div>`:""}
-    <div class="card"><div class="card-head"><span class="l">Genius Aciklamalari</span><span class="h">en yuksek oylu yorumlar</span></div>
+      </ul><p class="note">Öneri değil ham madde: aynı label = aynı A&R kulağı. Zincir bağlantısını sohbette bu veriyle kur.</p></div>`:""}
+    <div class="card"><div class="card-head"><span class="l">Genius Açıklamaları</span><span class="h">en yüksek oylu yorumlar</span></div>
       ${e.genius
         ? e.genius.map(g=>`<div style="margin-bottom:10px"><p style="font-size:12px;color:var(--gold)">${esc(g.song)}${g.url?` <a href="${esc(g.url)}" target="_blank" rel="noopener" style="color:var(--faint);font-size:10px">genius↗</a>`:""}</p>
-            ${g.annotations.map(a=>`<p style="margin-top:4px">${esc(a)}…</p>`).join("")||`<p class="note">${g.url?"Bu sarki icin yeterli-uzunlukta aciklama yok.":"Genius'ta bu sarki icin eslesme bulunamadi."}</p>`}</div>`).join("")
-        : `<p class="note" style="margin-top:0;margin-bottom:10px">Genius'ta sozler icin ayri bir "resmi aciklama" katmani yok — her aciklama toplulukca yazilir. Burada en cok oy alanlar getirilir (guvenilirlik proxy'si), tek satirlik kisa yorumlar elenir. Worker proxy kurulumu README'de.</p>
-           <button class="go" id="btn-genius" onclick="genGenius(${i})">Aciklamalari Cek</button>`}
+            ${g.annotations.map(a=>`<p style="margin-top:4px">${esc(a)}…</p>`).join("")||`<p class="note">${g.url?"Bu şarkı için yeterli uzunlukta açıklama yok.":"Genius'ta bu şarkı için eşleşme bulunamadı."}</p>`}</div>`).join("")
+        : `<p class="note" style="margin-top:0;margin-bottom:10px">Genius'ta ayrı bir "resmi açıklama" katmanı yok — hepsi topluluk yazımı. En çok oy alanlar getirilir, kısa yorumlar elenir.</p>
+           <button class="go" id="btn-genius" onclick="genGenius(${i})">Açıklamaları Çek</button>`}
+    </div>
+    <div class="card"><div class="card-head"><span class="l">Etiketler</span><span class="h">virgüllü — arama bunlara da bakar</span></div>
+      <div style="display:flex;gap:8px">
+        <input id="tags-in" value="${esc(e.tags||"")}" placeholder="yağmurlu gün, tez arası, kulaklık..." />
+        <button class="go" onclick="S.log[${i}].tags=$('tags-in').value.trim();save();render()">Kaydet</button>
+      </div>
+      ${e.tags?`<div style="margin-top:8px">${e.tags.split(",").map(t=>t.trim()).filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>`:""}
     </div>
     <div class="card">
-      <div class="card-head"><span class="l">Claude Analizi</span><span class="h">sohbetten yapistir</span></div>
+      <div class="card-head"><span class="l">Claude Analizi</span><span class="h">sohbetten yapıştır</span></div>
       ${e.analysis
         ? `<p class="analysis">${esc(e.analysis)}</p>
-           <button class="mini" style="margin-top:10px" onclick="S.log[${i}].analysis='';save();render()">Duzenle</button>`
-        : `<p class="note" style="margin-top:0;margin-bottom:10px">Donem/soy hatti/anatomi/soz dunyasi/trivia analizi Claude sohbetinde uretilir; ciktiyi buraya yapistir, albumle birlikte arsivlensin.</p>
-           <textarea id="analysis-in" style="min-height:120px" placeholder="Claude'un analizini buraya yapistir..."></textarea>
+           <button class="mini" style="margin-top:10px" onclick="S.log[${i}].analysis='';save();render()">Düzenle</button>`
+        : `<p class="note" style="margin-top:0;margin-bottom:10px">Dönem/soy hattı/anatomi/söz dünyası/trivia analizi sohbette üretilir; çıktıyı buraya yapıştır.</p>
+           <textarea id="analysis-in" style="min-height:120px" placeholder="Claude'un analizini buraya yapıştır..."></textarea>
            <button class="go" style="margin-top:10px" onclick="saveAnalysis(${i})">Kaydet</button>`}
     </div>`;
 }
 
 render();
+switchTab(localStorage.getItem("startTab")||"debrief");
 </script>
 </body>
 </html>
