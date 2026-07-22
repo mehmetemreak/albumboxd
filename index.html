@@ -217,28 +217,42 @@ async function fetchLabelMates(labelId, excludeRgId){
   }catch(e){ return []; }
 }
 
-// ---------- D: Producer chain ----------
 const pname=(p)=>p&&(p.name||p); // backward compat: old entries store strings
-async function genProducerChain(i){
-  const e=S.log[i]; if(!e||!e.mb)return;
-  const prod=(e.mb.producers||[]).find(p=>p&&p.id);
-  if(!prod){ showErr("Bu kayitta MBID'li produktor yok (eski kayit olabilir — albumu yeniden logla)."); return; }
-  clearErr();
-  const btn=$("btn-prod"); if(btn){btn.disabled=true;btn.textContent="Cekiliyor...";}
-  try{
-    const d=await mbJson(`${MB}/artist/${prod.id}?inc=release-rels&fmt=json`);
-    const seen=new Set();
-    const works=(d.relations||[])
-      .filter(r=>/producer/i.test(r.type)&&r.release)
-      .map(r=>({title:r.release.title,date:r.release.date||""}))
-      .filter(w=>{ if(seen.has(w.title))return false; seen.add(w.title); return true; })
-      .sort((a,b)=>(a.date||"9999").localeCompare(b.date||"9999"))
-      .slice(0,20);
-    e.producerWorks={name:prod.name,works}; save(); render();
-  }catch(err){ showErr("Produktor zinciri cekilemedi: "+err.message); }
+
+// ---------- Ceviri (MyMemory, ucretsiz, key gerekmez) ----------
+async function translateText(text){
+  if(!text)return "";
+  const chunks=[]; let s=text;
+  while(s.length){ chunks.push(s.slice(0,480)); s=s.slice(480); } // API ~500 char siniri
+  const out=[];
+  for(const c of chunks){
+    const r=await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(c)}&langpair=en|tr`);
+    const j=await r.json();
+    out.push((j.responseData&&j.responseData.translatedText)||c);
+    await sleep(350);
+  }
+  return out.join(" ");
 }
 
-// ---------- B: Genius (via kendi Cloudflare Worker proxy'n) ----------
+async function translateEntry(i){
+  const e=S.log[i]; if(!e)return;
+  clearErr();
+  const btn=$("btn-translate"); if(btn){btn.disabled=true;btn.textContent="Cevriliyor...";}
+  try{
+    const tr={};
+    if(e.wiki&&e.wiki.extract) tr.extract=await translateText(e.wiki.extract);
+    const hl=extractHighlights(e.wiki);
+    if(hl.length) tr.highlights=await Promise.all(hl.map(async h=>({...h,sent:await translateText(h.sent)})));
+    if(e.genius&&e.genius.length){
+      tr.genius=[];
+      for(const g of e.genius){
+        tr.genius.push({song:g.song,url:g.url,annotations:await Promise.all(g.annotations.map(a=>translateText(a)))});
+      }
+    }
+    e.tr=tr; save(); render();
+  }catch(err){ showErr("Ceviri basarisiz: "+err.message+" (MyMemory gunluk limiti dolmus olabilir)"); }
+  finally{ if(btn){btn.disabled=false;btn.textContent="Turkceye Cevir";} }
+}
 function gproxy(){ return (localStorage.getItem("genius-proxy")||"").replace(/\/$/,""); }
 function saveGproxy(){ localStorage.setItem("genius-proxy",$("in-gproxy").value.trim()); render(); }
 async function genGenius(i){
@@ -281,15 +295,22 @@ const fmtLen=(ms)=>ms?`${Math.floor(ms/60000)}:${String(Math.floor((ms%60000)/10
 const DEFAULT_KW="feud,fight,refused,fired,quit,lawsuit,banned,arrested,drugs,overdose,accident,secret,rumor,sampled,sample,cover,influenced,inspired,named after,recorded in,one take,first time,only,never,famously,reportedly,allegedly,producer,demo,rejected,label,chart,flop,sold";
 function getKw(){ return (localStorage.getItem("wiki-kw")||DEFAULT_KW).split(",").map(s=>s.trim().toLowerCase()).filter(Boolean); }
 function saveKw(){ localStorage.setItem("wiki-kw",$("in-kw").value.trim()||DEFAULT_KW); render(); }
+const SECTION_WEIGHT={lyrics:3,themes:3,background:2,legacy:1.4,influence:1.4,recording:1.2,composition:1.2,music:1,release:1,reception:1,"critical reception":1};
+function sectionWeight(sec){
+  const s=sec.toLowerCase();
+  for(const k in SECTION_WEIGHT) if(s.startsWith(k)) return SECTION_WEIGHT[k];
+  return 1;
+}
 function extractHighlights(wiki){
   if(!wiki||!wiki.sections)return [];
   const kws=getKw(); const out=[];
   Object.entries(wiki.sections).forEach(([sec,txt])=>{
+    const w=sectionWeight(sec);
     txt.split(/(?<=[.!?])\s+/).forEach(sent=>{
       if(sent.length<60||sent.length>420)return;
       const low=sent.toLowerCase();
-      const score=kws.reduce((a,k)=>a+(low.includes(k)?1:0),0);
-      if(score>0)out.push({sec,sent:sent.trim(),score});
+      const hits=kws.reduce((a,k)=>a+(low.includes(k)?1:0),0);
+      if(hits>0)out.push({sec,sent:sent.trim(),score:hits*w});
     });
   });
   return out.sort((a,b)=>b.score-a.score).slice(0,8);
@@ -444,23 +465,18 @@ function render(){
         <span style="flex:1">${esc(t.title)}</span>
         ${t.length?`<span class="mono" style="color:var(--faint);font-size:11px">${fmtLen(t.length)}</span>`:""}
       </li>`).join("")}</ul></div>`:""}
-    ${wiki&&wiki.extract?`<div class="card"><div class="card-head"><span class="l">Baglam Ozeti</span><span class="h">wikipedia — giris</span></div><p>${esc(wiki.extract)}</p>
+    ${wiki&&wiki.extract?`<div class="card"><div class="card-head"><span class="l">Baglam Ozeti</span><span class="h">wikipedia — giris${e.tr&&e.tr.extract?" · tr":" · en"}</span></div><p>${esc(e.tr&&e.tr.extract?e.tr.extract:wiki.extract)}</p>
       <p class="src">Kaynak: <a href="${esc(wiki.url)}" target="_blank" rel="noopener">${esc(wiki.title)}</a></p></div>`:""}
-    ${(()=>{const hl=extractHighlights(wiki);return hl.length?`<div class="card"><div class="card-head"><span class="l">Highlight'lar</span><span class="h">wikipedia — merak filtreli</span></div><ul>
+    ${(()=>{const hl=(e.tr&&e.tr.highlights)||extractHighlights(wiki);return hl.length?`<div class="card"><div class="card-head"><span class="l">Highlight'lar</span><span class="h">wikipedia — merak filtreli${e.tr&&e.tr.highlights?" · tr":" · en"}</span></div><ul>
       ${hl.map(h=>`<li><span class="tag">${esc(h.sec)}</span> ${esc(h.sent)}</li>`).join("")}</ul>
       <p class="note">Filtre anahtar kelimeyle calisir, anlamla degil — kacirilan seyler icin makale linki yukarida, derin yorum sohbette.</p></div>`:""})()}
+    ${(wiki||e.genius)&&!e.tr?`<button class="go" id="btn-translate" onclick="translateEntry(${i})" style="margin-bottom:14px">Turkceye Cevir</button>`:""}
     ${e.labelMates&&e.labelMates.length?`<div class="card"><div class="card-head"><span class="l">Zincir Malzemesi</span><span class="h">ayni label — donem komsulari</span></div><ul>
       ${e.labelMates.map(m=>`<li>${esc(m.title)} — <b>${esc(m.artist)}</b>${m.date?` <span class="mono" style="color:var(--faint)">${esc(m.date.slice(0,4))}</span>`:""}</li>`).join("")}
       </ul><p class="note">Bu liste oneri degil ham madde: ayni label = ayni A&R kulagi/scene. Yarinki zincir baglantisini Claude sohbetinde bu veriyle kur.</p></div>`:""}
-    ${mb&&(mb.producers||[]).length?`<div class="card"><div class="card-head"><span class="l">Produktor Zinciri</span><span class="h">${esc(pname(mb.producers[0]))} — diger isleri</span></div>
-      ${e.producerWorks
-        ? `<ul>${e.producerWorks.works.map(w=>`<li>${esc(w.title)}${w.date?` <span class="mono" style="color:var(--faint)">${esc(w.date.slice(0,4))}</span>`:""}</li>`).join("")||"<li>MusicBrainz'de kayitli baska produksiyon isi yok.</li>"}</ul>
-           <p class="note">Zincirin en guclu halkasi genelde budur: ayni kulak, farkli grup.</p>`
-        : `<button class="go" id="btn-prod" onclick="genProducerChain(${i})">Produktorun Diger Islerini Cek</button>`}
-    </div>`:""}
-    <div class="card"><div class="card-head"><span class="l">Genius Aciklamalari</span><span class="h">en yuksek oylu yorumlar</span></div>
+    <div class="card"><div class="card-head"><span class="l">Genius Aciklamalari</span><span class="h">en yuksek oylu yorumlar${e.tr&&e.tr.genius?" · tr":""}</span></div>
       ${e.genius
-        ? e.genius.map(g=>`<div style="margin-bottom:10px"><p style="font-size:12px;color:var(--gold)">${esc(g.song)} <a href="${esc(g.url)}" target="_blank" rel="noopener" style="color:var(--faint);font-size:10px">genius↗</a></p>
+        ? (e.tr&&e.tr.genius?e.tr.genius:e.genius).map(g=>`<div style="margin-bottom:10px"><p style="font-size:12px;color:var(--gold)">${esc(g.song)} <a href="${esc(g.url)}" target="_blank" rel="noopener" style="color:var(--faint);font-size:10px">genius↗</a></p>
             ${g.annotations.map(a=>`<p style="margin-top:4px">${esc(a)}…</p>`).join("")||'<p class="note">Bu sarki icin yeterli-uzunlukta aciklama yok.</p>'}</div>`).join("")
         : `<p class="note" style="margin-top:0;margin-bottom:10px">Genius'ta sozler icin ayri bir "resmi aciklama" katmani yok — her aciklama toplulukca yazilir. Burada en cok oy alanlar getirilir (guvenilirlik proxy'si), tek satirlik kisa yorumlar elenir. Worker proxy kurulumu README'de.</p>
            <button class="go" id="btn-genius" onclick="genGenius(${i})">Aciklamalari Cek</button>`}
