@@ -7,10 +7,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --bg:#0E0D0C; --panel:#151310; --border:#3A342C; --text:#EDE6D6;
+    --bg:#0E0D0C; --panel:#151310; --panel2:#12100D; --hover:#1B1814; --dash:#26221C;
+    --border:#3A342C; --text:#EDE6D6;
     --muted:#8A8072; --faint:#5A5348; --gold:#C9A24B; --gold-h:#D9B461;
     --body:#C9C2B4; --red:#C9704B;
   }
+  body.light {
+    --bg:#F2EEE6; --panel:#FAF7F1; --panel2:#EFEAE0; --hover:#E7E1D4; --dash:#DDD6C7;
+    --border:#CFC7B6; --text:#2A2620;
+    --muted:#6B6355; --faint:#9A9284;
+    --body:#4A443A;
+  }
+  body.compact .card{padding:10px 12px;margin-bottom:10px}
+  body.compact .card-head{margin:-10px -12px 8px;padding:6px 12px}
+  body.compact .card p,body.compact .card li,body.compact .card td{font-size:12px;line-height:1.5}
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex}
   .display{font-family:'Fraunces',serif}.mono{font-family:'IBM Plex Mono',monospace}
@@ -19,11 +29,11 @@
   .day-badge{font-size:11px;color:var(--gold);border:1px solid var(--border);border-radius:4px;padding:4px 8px;margin-bottom:16px;display:inline-block}
   .wild{color:var(--red);border-color:rgba(201,112,75,.5)}
   .arc-item{display:flex;gap:8px;align-items:center;width:100%;text-align:left;background:none;border:none;border-left:2px solid transparent;color:var(--muted);padding:6px 8px;border-radius:0 4px 4px 0;cursor:pointer;font-size:13px;font-family:inherit;overflow:hidden;transition:color .15s,border-color .15s}
-  .arc-item:hover{color:var(--text)} .arc-item.active{background:#1B1814;color:var(--gold);border-left-color:var(--gold)}
+  .arc-item:hover{color:var(--text)} .arc-item.active{background:var(--hover);color:var(--gold);border-left-color:var(--gold)}
   .arc-item .meta{min-width:0;flex:1}
   .arc-item .meta span.t{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .arc-item small{display:block;font-size:10px;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .cover-thumb{width:26px;height:26px;border-radius:3px;object-fit:cover;flex-shrink:0;background:#1B1814}
+  .cover-thumb{width:26px;height:26px;border-radius:3px;object-fit:cover;flex-shrink:0;background:var(--hover)}
   .cover-big{width:84px;height:84px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--border)}
   .stamp{display:inline-block;transform:rotate(-5deg);border:1.5px solid var(--gold);color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:3px;opacity:.85}
   .stamp.wildstamp{border-color:var(--red);color:var(--red)}
@@ -54,18 +64,18 @@
   .del{background:none;border:none;color:var(--faint);cursor:pointer;font-size:16px}.del:hover{color:var(--red)}
   .card{border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;transition:border-color .18s}
   .card:hover{border-color:#4A4436}
-  .card-head{display:flex;align-items:baseline;gap:8px;margin:-16px -16px 12px;padding:8px 16px;background:#12100D;border-bottom:1px dashed var(--border);border-radius:8px 8px 0 0}
+  .card-head{display:flex;align-items:baseline;gap:8px;margin:-16px -16px 12px;padding:8px 16px;background:var(--panel2);border-bottom:1px dashed var(--border);border-radius:8px 8px 0 0}
   .card-head .l{font-size:13px;font-weight:500}.card-head .h{font-size:10px;color:var(--faint);margin-left:auto}
   .card p,.card li,.card td,.card th{font-size:13px;color:var(--body);line-height:1.65}
   .card ul{list-style:none}
-  .card li{padding:3px 0;border-bottom:1px dashed #26221C}.card li:last-child{border-bottom:none}
+  .card li{padding:3px 0;border-bottom:1px dashed var(--dash)}.card li:last-child{border-bottom:none}
   .card li b{color:var(--text);font-weight:500}
   .tag{display:inline-block;font-size:10px;color:var(--gold);border:1px solid var(--border);border-radius:3px;padding:1px 6px;margin:2px 3px 2px 0}
   .src{font-size:10px;color:var(--faint);margin-top:8px}.src a{color:var(--muted)}
   .empty{border:1px dashed var(--border);border-radius:8px;padding:36px;text-align:center;font-size:13px;color:var(--muted)}
   .analysis{white-space:pre-wrap}
   table{border-collapse:collapse;width:100%}
-  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #26221C}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--dash)}
   th{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--faint)}
   .rating{color:var(--gold)}
   @media(max-width:700px){body{flex-direction:column}aside{width:100%;border-right:none;border-bottom:1px solid var(--border)}.row,.row3{grid-template-columns:1fr}
@@ -90,6 +100,7 @@
     <div class="tabs">
       <button class="tab on" id="tab-debrief" onclick="switchTab('debrief')">Debrief</button>
       <button class="tab" id="tab-retro" onclick="switchTab('retro')">Geriye Bak</button>
+      <button class="tab" id="tab-settings" onclick="switchTab('settings')">Ayarlar</button>
     </div>
 
     <div id="err" class="err" style="display:none"></div>
@@ -146,20 +157,50 @@
         bu bir klinik olcek degil, kaba bir iz.</p>
       </div>
       <div id="dossier"></div>
-      <div class="card" style="margin-top:24px"><div class="card-head"><span class="l">Merak Filtresi</span><span class="h">highlight anahtar kelimeleri — virgullu</span></div>
+    </div>
+
+    <!-- RETRO TAB -->
+    <div id="pane-retro" style="display:none"></div>
+
+    <!-- SETTINGS TAB -->
+    <div id="pane-settings" style="display:none">
+      <div class="card"><div class="card-head"><span class="l">Gorunum</span><span class="h">tercihler bu tarayicida saklanir</span></div>
+        <div class="row3" style="margin-bottom:0">
+          <div><label>Mod</label>
+            <select id="th-mode" onchange="saveTheme()">
+              <option value="dark">Koyu</option>
+              <option value="light">Acik</option>
+            </select>
+          </div>
+          <div><label>Vurgu rengi</label>
+            <select id="th-accent" onchange="saveTheme()">
+              <option value="#C9A24B">Altin (varsayilan)</option>
+              <option value="#7FA8A0">Deniz camı</option>
+              <option value="#B0784A">Bakir</option>
+              <option value="#8FA86B">Zeytin</option>
+              <option value="#A583B5">Leylak</option>
+              <option value="#C9704B">Kiremit</option>
+            </select>
+          </div>
+          <div><label>Yogunluk</label>
+            <select id="th-density" onchange="saveTheme()">
+              <option value="normal">Normal</option>
+              <option value="compact">Sikisik</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="card"><div class="card-head"><span class="l">Merak Filtresi</span><span class="h">highlight anahtar kelimeleri — virgullu</span></div>
         <textarea id="in-kw" style="min-height:60px;font-size:11px" placeholder="feud, sampled, recorded in..."></textarea>
         <button class="go" style="margin-top:8px" onclick="saveKw()">Kaydet</button>
       </div>
-      <div class="card" style="margin-top:14px"><div class="card-head"><span class="l">Genius Proxy</span><span class="h">opsiyonel — worker.js kurulumu README'de</span></div>
+      <div class="card"><div class="card-head"><span class="l">Genius Proxy</span><span class="h">opsiyonel — worker.js kurulumu README'de</span></div>
         <div style="display:flex;gap:8px">
           <input id="in-gproxy" placeholder="https://album-genius.SENIN-ADIN.workers.dev" />
           <button class="go" onclick="saveGproxy()">Kaydet</button>
         </div>
       </div>
     </div>
-
-    <!-- RETRO TAB -->
-    <div id="pane-retro" style="display:none"></div>
   </main>
 
 <script>
@@ -470,18 +511,49 @@ function importLog(ev){
   r.readAsText(f);
 }
 
+// ---------- Theme ----------
+function getTheme(){
+  try{ return JSON.parse(localStorage.getItem("theme")||"{}"); }catch(e){ return {}; }
+}
+function applyTheme(){
+  const t=getTheme();
+  document.body.classList.toggle("light",t.mode==="light");
+  document.body.classList.toggle("compact",t.density==="compact");
+  const root=document.documentElement.style;
+  const accent=t.accent||"#C9A24B";
+  root.setProperty("--gold",accent);
+  // hover tonu: accent'i hafif acik yap
+  const h=accent.replace("#",""); const n=parseInt(h,16);
+  const lighten=(c)=>Math.min(255,c+22);
+  const r=lighten(n>>16&255),g=lighten(n>>8&255),b=lighten(n&255);
+  root.setProperty("--gold-h",`rgb(${r},${g},${b})`);
+}
+function saveTheme(){
+  const t={mode:$("th-mode").value,accent:$("th-accent").value,density:$("th-density").value};
+  localStorage.setItem("theme",JSON.stringify(t));
+  applyTheme();
+}
+function restoreSettingsInputs(){
+  const t=getTheme();
+  if($("th-mode"))$("th-mode").value=t.mode||"dark";
+  if($("th-accent"))$("th-accent").value=t.accent||"#C9A24B";
+  if($("th-density"))$("th-density").value=t.density||"normal";
+  const gp=$("in-gproxy"); if(gp)gp.value=gproxy();
+  const kw=$("in-kw"); if(kw)kw.value=localStorage.getItem("wiki-kw")||DEFAULT_KW;
+}
+applyTheme();
+
 // ---------- Tabs & render ----------
 function switchTab(t){
-  ["debrief","retro"].forEach(x=>{
+  ["debrief","retro","settings"].forEach(x=>{
     $("pane-"+x).style.display=x===t?"block":"none";
     $("tab-"+x).classList.toggle("on",x===t);
   });
   if(t==="retro")renderRetro();
+  if(t==="settings")restoreSettingsInputs();
 }
 
 function render(){
-  const gp=$("in-gproxy"); if(gp&&!gp.value)gp.value=gproxy();
-  const kw=$("in-kw"); if(kw&&!kw.value)kw.value=localStorage.getItem("wiki-kw")||DEFAULT_KW;
   const n=S.log.length, next=n+1, isWild=next%7===0;
   const badge=$("day-badge");
   badge.textContent=`Gun ${n} tamam · Sirada: Gun ${next}${isWild?" — WILDCARD":""}`;
