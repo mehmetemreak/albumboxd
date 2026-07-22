@@ -254,11 +254,15 @@ async function genGenius(i){
     for(const h of hits.slice(0,2)){ // 2 sarki: rate-limit nezaketi
       const rr=await(await fetch(`${base}/referents?song_id=${h.id}`)).json();
       const anns=(((rr.response||{}).referents)||[])
-        .map(ref=>((ref.annotations||[])[0]||{}))
-        .map(a=>(a.body&&a.body.plain)||"")
-        .filter(t=>t.length>40)
+        .map(ref=>{
+          const list=(ref.annotations||[]).slice().sort((a,b)=>(b.votes_total||0)-(a.votes_total||0));
+          return list[0]||{};
+        })
+        .map(a=>({text:(a.body&&a.body.plain)||"",votes:a.votes_total||0}))
+        .filter(a=>a.text.length>80)
+        .sort((a,b)=>b.votes-a.votes)
         .slice(0,3)
-        .map(t=>t.slice(0,420));
+        .map(a=>a.text.slice(0,500));
       out.push({song:h.title,url:h.url,annotations:anns});
       await sleep(400);
     }
@@ -454,12 +458,12 @@ function render(){
            <p class="note">Zincirin en guclu halkasi genelde budur: ayni kulak, farkli grup.</p>`
         : `<button class="go" id="btn-prod" onclick="genProducerChain(${i})">Produktorun Diger Islerini Cek</button>`}
     </div>`:""}
-    <div class="card"><div class="card-head"><span class="l">Genius Annotasyonlari</span><span class="h">topluluk soz cozumlemeleri</span></div>
+    <div class="card"><div class="card-head"><span class="l">Genius Aciklamalari</span><span class="h">en yuksek oylu yorumlar</span></div>
       ${e.genius
         ? e.genius.map(g=>`<div style="margin-bottom:10px"><p style="font-size:12px;color:var(--gold)">${esc(g.song)} <a href="${esc(g.url)}" target="_blank" rel="noopener" style="color:var(--faint);font-size:10px">genius↗</a></p>
-            ${g.annotations.map(a=>`<p style="margin-top:4px">${esc(a)}…</p>`).join("")||'<p class="note">Bu sarki icin annotation yok.</p>'}</div>`).join("")
-        : `<p class="note" style="margin-top:0;margin-bottom:10px">Topluluk cozumlemeleri (sozlerin kendisi degil — yorumlari). Worker proxy kurulumu README'de.</p>
-           <button class="go" id="btn-genius" onclick="genGenius(${i})">Annotasyonlari Cek</button>`}
+            ${g.annotations.map(a=>`<p style="margin-top:4px">${esc(a)}…</p>`).join("")||'<p class="note">Bu sarki icin yeterli-uzunlukta aciklama yok.</p>'}</div>`).join("")
+        : `<p class="note" style="margin-top:0;margin-bottom:10px">Genius'ta sozler icin ayri bir "resmi aciklama" katmani yok — her aciklama toplulukca yazilir. Burada en cok oy alanlar getirilir (guvenilirlik proxy'si), tek satirlik kisa yorumlar elenir. Worker proxy kurulumu README'de.</p>
+           <button class="go" id="btn-genius" onclick="genGenius(${i})">Aciklamalari Cek</button>`}
     </div>
     <div class="card">
       <div class="card-head"><span class="l">Claude Analizi</span><span class="h">sohbetten yapistir</span></div>
