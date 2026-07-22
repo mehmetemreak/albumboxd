@@ -119,6 +119,16 @@
         ciktiyi asagidaki "Claude Analizi" alanina yapistirip arsivleyebilirsin.</p>
       </div>
       <div id="dossier"></div>
+      <div class="card" style="margin-top:24px"><div class="card-head"><span class="l">Merak Filtresi</span><span class="h">highlight anahtar kelimeleri — virgullu</span></div>
+        <textarea id="in-kw" style="min-height:60px;font-size:11px" placeholder="feud, sampled, recorded in..."></textarea>
+        <button class="go" style="margin-top:8px" onclick="saveKw()">Kaydet</button>
+      </div>
+      <div class="card" style="margin-top:14px"><div class="card-head"><span class="l">Genius Proxy</span><span class="h">opsiyonel — worker.js kurulumu README'de</span></div>
+        <div style="display:flex;gap:8px">
+          <input id="in-gproxy" placeholder="https://album-genius.SENIN-ADIN.workers.dev" />
+          <button class="go" onclick="saveGproxy()">Kaydet</button>
+        </div>
+      </div>
     </div>
 
     <!-- RETRO TAB -->
@@ -149,16 +159,17 @@ async function fetchMB(album,artist){
   const d=await mbJson(`${MB}/release-group/${rg.id}?inc=artist-credits+releases+genres&fmt=json`);
   const rels=(d.releases||[]).slice().sort((a,b)=>(a.date||"9999").localeCompare(b.date||"9999"));
   const first=rels[0];
-  let labels=[],labelIds=[],producers=[],engineers=[];
+  let labels=[],labelIds=[],producers=[],engineers=[],tracks=[];
   if(first){
     await sleep(1100);
     const rel=await mbJson(`${MB}/release/${first.id}?inc=labels+recordings+recording-level-rels+artist-rels&fmt=json`);
     (rel["label-info"]||[]).forEach(l=>{ if(l.label){ labels.push(l.label.name); labelIds.push(l.label.id); } });
     const seen=new Set();
     (rel.media||[]).forEach(m=>(m.tracks||[]).forEach(t=>{
+      tracks.push({title:t.title,length:t.length||((t.recording||{}).length)||null,liked:false});
       ((t.recording&&t.recording.relations)||[]).forEach(r=>{
         const n=r.artist&&r.artist.name; if(!n||seen.has(r.type+n))return; seen.add(r.type+n);
-        if(/producer/i.test(r.type))producers.push(n);
+        if(/producer/i.test(r.type))producers.push({name:n,id:r.artist.id});
         else if(/engineer|mix|master/i.test(r.type))engineers.push(n);
       });
     }));
@@ -169,7 +180,8 @@ async function fetchMB(album,artist){
     firstDate:d["first-release-date"]||(first&&first.date)||"",
     genres:(d.genres||[]).sort((a,b)=>b.count-a.count).slice(0,6).map(g=>g.name),
     labels:[...new Set(labels)], labelIds:[...new Set(labelIds)],
-    producers:[...new Set(producers)].slice(0,8),
+    producers:producers.slice(0,8),
+    tracks,
     engineers:[...new Set(engineers)].slice(0,6),
     url:`https://musicbrainz.org/release-group/${rg.id}`
   };
@@ -179,9 +191,20 @@ async function fetchWiki(album,artist){
   const sq=encodeURIComponent(`${album} ${artist} album`);
   const s=await(await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${sq}&format=json&origin=*&srlimit=3`)).json();
   const hit=((s.query||{}).search||[])[0]; if(!hit)return null;
-  const t=encodeURIComponent(hit.title);
-  const sum=await(await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${t}`)).json();
-  return { title:sum.title, extract:sum.extract||"", url:(sum.content_urls&&sum.content_urls.desktop&&sum.content_urls.desktop.page)||`https://en.wikipedia.org/wiki/${t}` };
+  const t=hit.title;
+  const ex=await(await fetch(`https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&titles=${encodeURIComponent(t)}&format=json&origin=*`)).json();
+  const pages=ex.query&&ex.query.pages; const page=pages&&pages[Object.keys(pages)[0]];
+  const full=(page&&page.extract)||"";
+  const intro=full.split(/\n==[^=]/)[0].trim();
+  const wanted=["Background","Recording","Composition","Music","Lyrics","Themes","Release","Reception","Critical reception","Legacy","Influence"];
+  const sections={};
+  const re=/\n==\s*([^=\n]+?)\s*==\n([\s\S]*?)(?=\n==[^=]|$)/g; let m;
+  while((m=re.exec(full))){
+    const name=m[1].trim();
+    if(wanted.some(w=>name.toLowerCase().startsWith(w.toLowerCase())))
+      sections[name]=m[2].replace(/\n===[^\n]+===\n/g,"\n").trim().slice(0,2400);
+  }
+  return { title:t, extract:intro, sections, url:`https://en.wikipedia.org/wiki/${encodeURIComponent(t.replace(/ /g,"_"))}` };
 }
 
 async function fetchLabelMates(labelId, excludeRgId){
@@ -192,6 +215,80 @@ async function fetchLabelMates(labelId, excludeRgId){
       .map(rg=>({title:rg.title, artist:(rg["artist-credit"]||[]).map(a=>a.name).join(""), date:rg["first-release-date"]||""}))
       .sort((a,b)=>(a.date||"9999").localeCompare(b.date||"9999"));
   }catch(e){ return []; }
+}
+
+// ---------- D: Producer chain ----------
+const pname=(p)=>p&&(p.name||p); // backward compat: old entries store strings
+async function genProducerChain(i){
+  const e=S.log[i]; if(!e||!e.mb)return;
+  const prod=(e.mb.producers||[]).find(p=>p&&p.id);
+  if(!prod){ showErr("Bu kayitta MBID'li produktor yok (eski kayit olabilir — albumu yeniden logla)."); return; }
+  clearErr();
+  const btn=$("btn-prod"); if(btn){btn.disabled=true;btn.textContent="Cekiliyor...";}
+  try{
+    const d=await mbJson(`${MB}/artist/${prod.id}?inc=release-rels&fmt=json`);
+    const seen=new Set();
+    const works=(d.relations||[])
+      .filter(r=>/producer/i.test(r.type)&&r.release)
+      .map(r=>({title:r.release.title,date:r.release.date||""}))
+      .filter(w=>{ if(seen.has(w.title))return false; seen.add(w.title); return true; })
+      .sort((a,b)=>(a.date||"9999").localeCompare(b.date||"9999"))
+      .slice(0,20);
+    e.producerWorks={name:prod.name,works}; save(); render();
+  }catch(err){ showErr("Produktor zinciri cekilemedi: "+err.message); }
+}
+
+// ---------- B: Genius (via kendi Cloudflare Worker proxy'n) ----------
+function gproxy(){ return (localStorage.getItem("genius-proxy")||"").replace(/\/$/,""); }
+function saveGproxy(){ localStorage.setItem("genius-proxy",$("in-gproxy").value.trim()); render(); }
+async function genGenius(i){
+  const e=S.log[i]; if(!e)return;
+  const base=gproxy();
+  if(!base){ showErr("Genius proxy URL'i girilmemis — Debrief sekmesinin altindaki alana Worker adresini yaz."); return; }
+  clearErr();
+  const btn=$("btn-genius"); if(btn){btn.disabled=true;btn.textContent="Cekiliyor...";}
+  try{
+    const sr=await(await fetch(`${base}/search?q=${encodeURIComponent(e.artist+" "+e.album)}`)).json();
+    const hits=(((sr.response||{}).hits)||[]).map(h=>h.result).filter(Boolean).slice(0,4);
+    const out=[];
+    for(const h of hits.slice(0,2)){ // 2 sarki: rate-limit nezaketi
+      const rr=await(await fetch(`${base}/referents?song_id=${h.id}`)).json();
+      const anns=(((rr.response||{}).referents)||[])
+        .map(ref=>((ref.annotations||[])[0]||{}))
+        .map(a=>(a.body&&a.body.plain)||"")
+        .filter(t=>t.length>40)
+        .slice(0,3)
+        .map(t=>t.slice(0,420));
+      out.push({song:h.title,url:h.url,annotations:anns});
+      await sleep(400);
+    }
+    e.genius=out; save(); render();
+  }catch(err){ showErr("Genius cekilemedi: "+err.message+" (Worker calisiyormu / token dogru mu?)"); }
+}
+
+// ---------- Likes ----------
+function toggleLike(i,ti){
+  const t=(((S.log[i]||{}).mb||{}).tracks||[])[ti];
+  if(!t)return; t.liked=!t.liked; save(); render();
+}
+const fmtLen=(ms)=>ms?`${Math.floor(ms/60000)}:${String(Math.floor((ms%60000)/1000)).padStart(2,"0")}`:"";
+
+// ---------- Wiki highlights ----------
+const DEFAULT_KW="feud,fight,refused,fired,quit,lawsuit,banned,arrested,drugs,overdose,accident,secret,rumor,sampled,sample,cover,influenced,inspired,named after,recorded in,one take,first time,only,never,famously,reportedly,allegedly,producer,demo,rejected,label,chart,flop,sold";
+function getKw(){ return (localStorage.getItem("wiki-kw")||DEFAULT_KW).split(",").map(s=>s.trim().toLowerCase()).filter(Boolean); }
+function saveKw(){ localStorage.setItem("wiki-kw",$("in-kw").value.trim()||DEFAULT_KW); render(); }
+function extractHighlights(wiki){
+  if(!wiki||!wiki.sections)return [];
+  const kws=getKw(); const out=[];
+  Object.entries(wiki.sections).forEach(([sec,txt])=>{
+    txt.split(/(?<=[.!?])\s+/).forEach(sent=>{
+      if(sent.length<60||sent.length>420)return;
+      const low=sent.toLowerCase();
+      const score=kws.reduce((a,k)=>a+(low.includes(k)?1:0),0);
+      if(score>0)out.push({sec,sent:sent.trim(),score});
+    });
+  });
+  return out.sort((a,b)=>b.score-a.score).slice(0,8);
 }
 
 // ---------- Log a day ----------
@@ -252,7 +349,25 @@ function renderRetro(){
   const avgRows=Object.entries(byG).map(([g,arr])=>[g,(arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2),arr.length])
     .sort((a,b)=>b[1]-a[1])
     .map(([g,avg,n])=>`<li><b>${esc(g)}</b> → ort. <span class="rating mono">${avg}</span> <span class="mono" style="color:var(--faint)">(n=${n})</span></li>`).join("");
+  // C: chain view — link consecutive entries by shared producer/label
+  const chainRows=S.log.map((e,idx)=>{
+    if(idx===0)return `<li><span class="mono" style="color:var(--faint)">1.</span> <b>${esc(e.album)}</b></li>`;
+    const prev=S.log[idx-1];
+    const pp=new Set(((prev.mb||{}).producers||[]).map(pname));
+    const shared=[
+      ...(((e.mb||{}).producers||[]).map(pname).filter(x=>pp.has(x)).map(x=>"prod: "+x)),
+      ...(((e.mb||{}).labels||[]).filter(x=>((prev.mb||{}).labels||[]).includes(x)).map(x=>"label: "+x))
+    ];
+    const isW=e.day%7===0;
+    const link=isW?'<span style="color:var(--red)">⟂ wildcard</span>':(shared.length?`<span style="color:var(--gold)">→ ${esc(shared.join(" · "))}</span>`:'<span style="color:var(--faint)">→ veri baglantisi yok (zincir sebebin sohbette)</span>');
+    return `<li>${link}<br><span class="mono" style="color:var(--faint)">${e.day}.</span> <b>${esc(e.album)}</b> — ${esc(e.artist)}</li>`;
+  }).join("");
+  const liked=[];
+  S.log.forEach(e=>(((e.mb||{}).tracks)||[]).forEach(t=>{ if(t.liked)liked.push({song:t.title,album:e.album,day:e.day}); }));
   p.innerHTML=`
+    <div class="card"><div class="card-head"><span class="l">Zincir Gorunumu</span><span class="h">gunler arasi baglanti</span></div><ul>${chainRows||"<li>Log bos.</li>"}</ul></div>
+    ${liked.length?`<div class="card"><div class="card-head"><span class="l">Kalpli Sarkilar</span><span class="h">${liked.length} sarki — playlist hammaddesi</span></div><ul>
+      ${liked.map(l=>`<li>♥ <b>${esc(l.song)}</b> — ${esc(l.album)} <span class="mono" style="color:var(--faint)">g${l.day}</span></li>`).join("")}</ul></div>`:""}
     <div class="card"><div class="card-head"><span class="l">Log Tablosu</span><span class="h">${rows.length} gun</span></div>
       <table><tr><th>Gun</th><th>Album</th><th>Puan</th><th>Enerji</th><th>Mood</th><th>Tur</th></tr>
       ${rows.map(r=>`<tr><td class="mono">${r.day}</td><td>${esc(r.album)}</td><td class="rating mono">${r.rating??"—"}</td><td>${esc(r.energy)}</td><td>${esc(r.mood)}</td><td>${esc(r.genre)}</td></tr>`).join("")}
@@ -286,6 +401,8 @@ function switchTab(t){
 }
 
 function render(){
+  const gp=$("in-gproxy"); if(gp&&!gp.value)gp.value=gproxy();
+  const kw=$("in-kw"); if(kw&&!kw.value)kw.value=localStorage.getItem("wiki-kw")||DEFAULT_KW;
   const n=S.log.length, next=n+1, isWild=next%7===0;
   const badge=$("day-badge");
   badge.textContent=`Gun ${n} tamam · Sirada: Gun ${next}${isWild?" — WILDCARD":""}`;
@@ -313,15 +430,37 @@ function render(){
     ${mb?`<div class="card"><div class="card-head"><span class="l">Kunye</span><span class="h">musicbrainz — kesin veri</span></div><ul>
       ${mb.firstDate?`<li><b>Ilk yayin:</b> <span class="mono">${esc(mb.firstDate)}</span></li>`:""}
       ${mb.labels.length?`<li><b>Label:</b> ${esc(mb.labels.join(", "))}</li>`:""}
-      ${mb.producers.length?`<li><b>Produktor:</b> ${esc(mb.producers.join(", "))}</li>`:""}
+      ${mb.producers.length?`<li><b>Produktor:</b> ${esc(mb.producers.map(pname).join(", "))}</li>`:""}
       ${mb.engineers.length?`<li><b>Muhendislik/Mix:</b> ${esc(mb.engineers.join(", "))}</li>`:""}
       </ul>${mb.genres.length?`<div style="margin-top:8px">${mb.genres.map(g=>`<span class="tag">${esc(g)}</span>`).join("")}</div>`:""}
       <p class="src">Kaynak: <a href="${esc(mb.url)}" target="_blank" rel="noopener">MusicBrainz</a></p></div>`:""}
-    ${wiki&&wiki.extract?`<div class="card"><div class="card-head"><span class="l">Baglam Ozeti</span><span class="h">wikipedia</span></div><p>${esc(wiki.extract)}</p>
+    ${mb&&(mb.tracks||[]).length?`<div class="card"><div class="card-head"><span class="l">Tracklist</span><span class="h">kalple — arsive islenir</span></div><ul>
+      ${mb.tracks.map((t,ti)=>`<li style="display:flex;align-items:center;gap:8px">
+        <button onclick="toggleLike(${i},${ti})" style="background:none;border:none;cursor:pointer;font-size:14px;color:${t.liked?"var(--red)":"var(--faint)"}">${t.liked?"♥":"♡"}</button>
+        <span style="flex:1">${esc(t.title)}</span>
+        ${t.length?`<span class="mono" style="color:var(--faint);font-size:11px">${fmtLen(t.length)}</span>`:""}
+      </li>`).join("")}</ul></div>`:""}
+    ${wiki&&wiki.extract?`<div class="card"><div class="card-head"><span class="l">Baglam Ozeti</span><span class="h">wikipedia — giris</span></div><p>${esc(wiki.extract)}</p>
       <p class="src">Kaynak: <a href="${esc(wiki.url)}" target="_blank" rel="noopener">${esc(wiki.title)}</a></p></div>`:""}
+    ${(()=>{const hl=extractHighlights(wiki);return hl.length?`<div class="card"><div class="card-head"><span class="l">Highlight'lar</span><span class="h">wikipedia — merak filtreli</span></div><ul>
+      ${hl.map(h=>`<li><span class="tag">${esc(h.sec)}</span> ${esc(h.sent)}</li>`).join("")}</ul>
+      <p class="note">Filtre anahtar kelimeyle calisir, anlamla degil — kacirilan seyler icin makale linki yukarida, derin yorum sohbette.</p></div>`:""})()}
     ${e.labelMates&&e.labelMates.length?`<div class="card"><div class="card-head"><span class="l">Zincir Malzemesi</span><span class="h">ayni label — donem komsulari</span></div><ul>
       ${e.labelMates.map(m=>`<li>${esc(m.title)} — <b>${esc(m.artist)}</b>${m.date?` <span class="mono" style="color:var(--faint)">${esc(m.date.slice(0,4))}</span>`:""}</li>`).join("")}
       </ul><p class="note">Bu liste oneri degil ham madde: ayni label = ayni A&R kulagi/scene. Yarinki zincir baglantisini Claude sohbetinde bu veriyle kur.</p></div>`:""}
+    ${mb&&(mb.producers||[]).length?`<div class="card"><div class="card-head"><span class="l">Produktor Zinciri</span><span class="h">${esc(pname(mb.producers[0]))} — diger isleri</span></div>
+      ${e.producerWorks
+        ? `<ul>${e.producerWorks.works.map(w=>`<li>${esc(w.title)}${w.date?` <span class="mono" style="color:var(--faint)">${esc(w.date.slice(0,4))}</span>`:""}</li>`).join("")||"<li>MusicBrainz'de kayitli baska produksiyon isi yok.</li>"}</ul>
+           <p class="note">Zincirin en guclu halkasi genelde budur: ayni kulak, farkli grup.</p>`
+        : `<button class="go" id="btn-prod" onclick="genProducerChain(${i})">Produktorun Diger Islerini Cek</button>`}
+    </div>`:""}
+    <div class="card"><div class="card-head"><span class="l">Genius Annotasyonlari</span><span class="h">topluluk soz cozumlemeleri</span></div>
+      ${e.genius
+        ? e.genius.map(g=>`<div style="margin-bottom:10px"><p style="font-size:12px;color:var(--gold)">${esc(g.song)} <a href="${esc(g.url)}" target="_blank" rel="noopener" style="color:var(--faint);font-size:10px">genius↗</a></p>
+            ${g.annotations.map(a=>`<p style="margin-top:4px">${esc(a)}…</p>`).join("")||'<p class="note">Bu sarki icin annotation yok.</p>'}</div>`).join("")
+        : `<p class="note" style="margin-top:0;margin-bottom:10px">Topluluk cozumlemeleri (sozlerin kendisi degil — yorumlari). Worker proxy kurulumu README'de.</p>
+           <button class="go" id="btn-genius" onclick="genGenius(${i})">Annotasyonlari Cek</button>`}
+    </div>
     <div class="card">
       <div class="card-head"><span class="l">Claude Analizi</span><span class="h">sohbetten yapistir</span></div>
       ${e.analysis

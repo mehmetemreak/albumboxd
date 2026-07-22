@@ -42,3 +42,38 @@ Sitede LLM ve API key YOKTUR — yorum katmani (donem/soy hatti/anatomi/soz duny
 - [ ] Arşivi JSON export/import (localStorage silinirse diye yedek)
 - [ ] Opsiyonel LLM yorum katmanı (kendi Anthropic API key'in, localStorage'da tutulmaz —
       her oturumda elle girilir)
+
+## Genius Proxy kurulumu (opsiyonel — B özelliği)
+
+Genius API tarayıcıya CORS vermediği için araya ücretsiz bir Cloudflare Worker girer.
+İki hesabı da **kendin** açacaksın (5'er dakika, ikisi de ücretsiz):
+
+1. **Genius token:** genius.com/api-clients → "New API Client" → App name/URL'e herhangi
+   bir şey yaz → oluştur → **"Client Access Token"**ı kopyala.
+2. **Cloudflare Worker:** dash.cloudflare.com → Workers & Pages → Create Worker →
+   editöre bu repodaki `worker.js` içeriğini yapıştır → Deploy.
+3. Worker'ın **Settings → Variables → Secrets** kısmına `GENIUS_TOKEN` adıyla
+   1. adımdaki token'ı ekle → tekrar Deploy.
+4. Worker URL'ini (https://....workers.dev) sitedeki "Genius Proxy" alanına yapıştır → Kaydet.
+
+**Ne çeker:** Şarkı başına topluluk annotation'ları (sözlerin *yorumu*).
+**Ne çekmez:** Sözlerin kendisi — Genius API bunu zaten vermez, proxy de istemez.
+
+## Wikipedia derin bölümler (A özelliği)
+
+Künye çekilirken artık makalenin tamamı alınır ve Background / Recording /
+Composition / Lyrics / Reception / Legacy bölümleri ayrı kartlar olarak gösterilir
+(bölüm başına ~2400 karakter). Giriş paragrafıyla sınırlı değil.
+
+## Prodüktör Zinciri (D özelliği)
+
+Künyedeki ilk prodüktörün MusicBrainz'de kayıtlı diğer prodüksiyon işleri tek tuşla
+listelenir — zincirleme önerinin en güçlü halkası ("aynı kulak, farklı grup").
+Not: Eski kayıtlarda prodüktör MBID'siz saklandığı için buton çalışmaz; albümü
+yeniden loglamak yeterli.
+
+## Zincir Görünümü (C özelliği)
+
+Geriye Bak sekmesinde günler arası bağlantı akışı: ardışık iki albüm ortak
+prodüktör/label paylaşıyorsa bağ otomatik etiketlenir; wildcard günleri ⟂ ile
+işaretlenir; veri bağlantısı yoksa "zincir sebebin sohbette" düşer.
