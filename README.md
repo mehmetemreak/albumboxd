@@ -50,8 +50,10 @@ Genius API tarayıcıya CORS vermediği için araya ücretsiz bir Cloudflare Wor
 
 1. **Genius token:** genius.com/api-clients → "New API Client" → App name/URL'e herhangi
    bir şey yaz → oluştur → **"Client Access Token"**ı kopyala.
-2. **Cloudflare Worker:** dash.cloudflare.com → Workers & Pages → Create Worker →
-   editöre bu repodaki `worker.js` içeriğini yapıştır → Deploy.
+2. **Cloudflare Worker:** dash.cloudflare.com → Workers & Pages → **Create** →
+   "Ship something new" ekranında **"Start with Hello World!"** seçeneğini seç
+   (GitHub/GitLab bağlantısı GEREKMEZ, sadece boş bir Worker + tarayıcı içi editör açar) →
+   editördeki örnek kodun tamamını sil, bu repodaki `worker.js` içeriğini yapıştır → Deploy.
 3. Worker'ın **Settings → Variables → Secrets** kısmına `GENIUS_TOKEN` adıyla
    1. adımdaki token'ı ekle → tekrar Deploy.
 4. Worker URL'ini (https://....workers.dev) sitedeki "Genius Proxy" alanına yapıştır → Kaydet.
