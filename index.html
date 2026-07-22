@@ -95,28 +95,28 @@
         </div>
         <div class="row3">
           <div><label>Puan (0-5)</label><input id="in-rating" type="number" min="0" max="5" step="0.5" placeholder="3.5" /></div>
-          <div><label>Gunun enerjisi</label>
-            <select id="in-energy">
+          <div><label>Valence (1-10)</label><input id="in-valence" type="number" min="1" max="10" placeholder="hoslukk: 1 kotu — 10 iyi" /></div>
+          <div><label>Arousal (1-10)</label><input id="in-arousal" type="number" min="1" max="10" placeholder="uyarilma: 1 durgun — 10 gergin" /></div>
+        </div>
+        <div class="row3">
+          <div><label>Fiziksel agri (0-3, opsiyonel)</label><input id="in-pain" type="number" min="0" max="3" placeholder="0=yok — 3=agir" /></div>
+          <div><label>Niyetlilik (opsiyonel)</label>
+            <select id="in-intent">
               <option value="">—</option>
-              <option value="dusuk">Dusuk</option>
-              <option value="orta">Orta</option>
-              <option value="yuksek">Yuksek</option>
+              <option value="secim">Kendi secimim</option>
+              <option value="zincir">Zincir onerisi</option>
+              <option value="wildcard">Wildcard</option>
             </select>
           </div>
-          <div><label>Mood</label>
-            <select id="in-mood">
-              <option value="">—</option>
-              <option value="karanlik">Karanlik</option>
-              <option value="notr">Notr</option>
-              <option value="iyi">Iyi</option>
-            </select>
-          </div>
+          <div></div>
         </div>
         <div style="margin-bottom:12px"><label>Not / reaksiyon</label><textarea id="in-note" placeholder="Kisa reaksiyon, one cikan sarkilar, akilda kalan..."></textarea></div>
         <button class="go" id="btn-go" onclick="logDay()">Gunu Logla + Kunye Cek</button>
         <p class="note">Kunye MusicBrainz'den, baglam ozeti Wikipedia'dan cekilir (~3-4 sn, rate limit geregi).
         Derin analiz — donem, soy hatti, anatomi, soz dunyasi, trivia — Claude sohbetinde yapilir;
-        ciktiyi asagidaki "Claude Analizi" alanina yapistirip arsivleyebilirsin.</p>
+        ciktiyi asagidaki "Claude Analizi" alanina yapistirip arsivleyebilirsin.
+        Valence = o gunun hoslugu (kotu↔iyi), arousal = uyarilma seviyesi (durgun↔gergin) —
+        ikisi bagimsiz eksenler, "dusuk enerji + gergin" ile "dusuk enerji + sakin" farkli seyler.</p>
       </div>
       <div id="dossier"></div>
       <div class="card" style="margin-top:24px"><div class="card-head"><span class="l">Merak Filtresi</span><span class="h">highlight anahtar kelimeleri — virgullu</span></div>
@@ -293,7 +293,8 @@ async function logDay(){
     const entry={
       day:S.log.length+1,
       album:(mb&&mb.title)||album, artist:(mb&&mb.artist)||artist,
-      rating:$("in-rating").value, energy:$("in-energy").value, mood:$("in-mood").value,
+      rating:$("in-rating").value, valence:$("in-valence").value, arousal:$("in-arousal").value,
+      pain:$("in-pain").value, intent:$("in-intent").value,
       note:$("in-note").value.trim(),
       analysis:"", // Claude sohbetinden yapistirilir
       date:new Date().toISOString().slice(0,10),
@@ -304,8 +305,8 @@ async function logDay(){
       entry.labelMates=(await fetchLabelMates(mb.labelIds[0],mb.id)).slice(0,12);
     }
     S.log.push(entry); S.active=S.log.length-1; save(); render();
-    ["in-album","in-artist","in-rating","in-note"].forEach(id=>$(id).value="");
-    $("in-energy").value=""; $("in-mood").value="";
+    ["in-album","in-artist","in-rating","in-note","in-valence","in-arousal","in-pain"].forEach(id=>$(id).value="");
+    $("in-intent").value="";
   }catch(e){ showErr("Loglanamadi: "+e.message); }
   finally{ btn.disabled=false; btn.textContent="Gunu Logla + Kunye Cek"; }
 }
@@ -324,22 +325,49 @@ function removeEntry(i){
 }
 
 // ---------- Retro ----------
+function pearson(xs,ys){
+  const n=xs.length; if(n<3)return null;
+  const mx=xs.reduce((a,b)=>a+b,0)/n, my=ys.reduce((a,b)=>a+b,0)/n;
+  let num=0,dx2=0,dy2=0;
+  for(let i=0;i<n;i++){ const dx=xs[i]-mx,dy=ys[i]-my; num+=dx*dy; dx2+=dx*dx; dy2+=dy*dy; }
+  if(dx2===0||dy2===0)return null;
+  return num/Math.sqrt(dx2*dy2);
+}
 function renderRetro(){
   const p=$("pane-retro");
   if(!S.log.length){ p.innerHTML='<div class="empty">Henuz log yok — korelasyon icin veri lazim.</div>'; return; }
   const rows=S.log.map(e=>{
     const g=(e.mb&&e.mb.genres&&e.mb.genres[0])||"?";
-    return {day:e.day,album:e.album,rating:parseFloat(e.rating)||null,energy:e.energy||"?",mood:e.mood||"?",genre:g};
+    return {
+      day:e.day,album:e.album,rating:parseFloat(e.rating),
+      valence:parseFloat(e.valence),arousal:parseFloat(e.arousal),
+      pain:parseFloat(e.pain),intent:e.intent||"?",genre:g
+    };
   });
-  const cross={};
-  rows.forEach(r=>{ const k=r.energy+"|"+r.genre; cross[k]=(cross[k]||0)+1; });
-  const crossRows=Object.entries(cross).sort((a,b)=>b[1]-a[1]).slice(0,10)
-    .map(([k,v])=>{const [en,g]=k.split("|");return `<li><b>${esc(en)}</b> enerji → ${esc(g)} <span class="mono">×${v}</span></li>`;}).join("");
+  // valence/arousal avg by genre
   const byG={};
-  rows.forEach(r=>{ if(r.rating==null)return; (byG[r.genre]=byG[r.genre]||[]).push(r.rating); });
-  const avgRows=Object.entries(byG).map(([g,arr])=>[g,(arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2),arr.length])
-    .sort((a,b)=>b[1]-a[1])
-    .map(([g,avg,n])=>`<li><b>${esc(g)}</b> → ort. <span class="rating mono">${avg}</span> <span class="mono" style="color:var(--faint)">(n=${n})</span></li>`).join("");
+  rows.forEach(r=>{
+    if(!(byG[r.genre]=byG[r.genre]||{v:[],a:[],rt:[]}))return;
+    if(!isNaN(r.valence))byG[r.genre].v.push(r.valence);
+    if(!isNaN(r.arousal))byG[r.genre].a.push(r.arousal);
+    if(!isNaN(r.rating))byG[r.genre].rt.push(r.rating);
+  });
+  const avg=(arr)=>arr.length?(arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1):"—";
+  const genreRows=Object.entries(byG).map(([g,o])=>
+    `<li><b>${esc(g)}</b> → valence ort. <span class="mono">${avg(o.v)}</span> · arousal ort. <span class="mono">${avg(o.a)}</span> · puan ort. <span class="rating mono">${avg(o.rt)}</span> <span class="mono" style="color:var(--faint)">(n=${o.rt.length})</span></li>`
+  ).sort().join("");
+  // Pearson: valence/arousal/pain vs rating
+  const valid=rows.filter(r=>!isNaN(r.valence)&&!isNaN(r.arousal)&&!isNaN(r.rating));
+  const rV=pearson(valid.map(r=>r.valence),valid.map(r=>r.rating));
+  const rA=pearson(valid.map(r=>r.arousal),valid.map(r=>r.rating));
+  const painValid=rows.filter(r=>!isNaN(r.pain)&&!isNaN(r.rating));
+  const rP=pearson(painValid.map(r=>r.pain),painValid.map(r=>r.rating));
+  const corrLine=(label,r,n)=>r==null?`<li><b>${label}</b> ↔ puan → yetersiz veri (n=${n})</li>`
+    :`<li><b>${label}</b> ↔ puan → <span class="mono">r=${r.toFixed(2)}</span> ${Math.abs(r)<0.2?"(zayif/yok)":Math.abs(r)<0.5?"(orta)":"(guclu)"} <span class="mono" style="color:var(--faint)">(n=${n})</span></li>`;
+  // intent breakdown
+  const byI={};
+  rows.forEach(r=>{ if(r.intent==="?"||isNaN(r.rating))return; (byI[r.intent]=byI[r.intent]||[]).push(r.rating); });
+  const intentRows=Object.entries(byI).map(([k,arr])=>`<li><b>${esc(k)}</b> → ort. puan <span class="rating mono">${avg(arr)}</span> <span class="mono" style="color:var(--faint)">(n=${arr.length})</span></li>`).join("");
   // C: chain view — link consecutive entries by shared producer/label
   const chainRows=S.log.map((e,idx)=>{
     if(idx===0)return `<li><span class="mono" style="color:var(--faint)">1.</span> <b>${esc(e.album)}</b></li>`;
@@ -360,13 +388,15 @@ function renderRetro(){
     ${liked.length?`<div class="card"><div class="card-head"><span class="l">Kalpli Sarkilar</span><span class="h">${liked.length} sarki — playlist hammaddesi</span></div><ul>
       ${liked.map(l=>`<li>♥ <b>${esc(l.song)}</b> — ${esc(l.album)} <span class="mono" style="color:var(--faint)">g${l.day}</span></li>`).join("")}</ul></div>`:""}
     <div class="card"><div class="card-head"><span class="l">Log Tablosu</span><span class="h">${rows.length} gun</span></div>
-      <table><tr><th>Gun</th><th>Album</th><th>Puan</th><th>Enerji</th><th>Mood</th><th>Tur</th></tr>
-      ${rows.map(r=>`<tr><td class="mono">${r.day}</td><td>${esc(r.album)}</td><td class="rating mono">${r.rating??"—"}</td><td>${esc(r.energy)}</td><td>${esc(r.mood)}</td><td>${esc(r.genre)}</td></tr>`).join("")}
+      <table><tr><th>Gun</th><th>Album</th><th>Puan</th><th>Valence</th><th>Arousal</th><th>Tur</th></tr>
+      ${rows.map(r=>`<tr><td class="mono">${r.day}</td><td>${esc(r.album)}</td><td class="rating mono">${isNaN(r.rating)?"—":r.rating}</td><td class="mono">${isNaN(r.valence)?"—":r.valence}</td><td class="mono">${isNaN(r.arousal)?"—":r.arousal}</td><td>${esc(r.genre)}</td></tr>`).join("")}
       </table>
       <p class="note">Haftalik/aylik "geriye bak" analizi icin bu tabloyu (ya da Export JSON'u) Claude sohbetine yapistir — korelasyon yorumunu orada yapariz.</p></div>
-    <div class="card"><div class="card-head"><span class="l">Enerji ↔ Tur</span><span class="h">en sik kombinasyonlar</span></div><ul>${crossRows||"<li>Veri az.</li>"}</ul>
-      <p class="note">n kucukken korelasyon degil anekdottur — 10+ gun olmadan sonuc cikarma.</p></div>
-    <div class="card"><div class="card-head"><span class="l">Tur ↔ Puan</span></div><ul>${avgRows||"<li>Puan girilmemis.</li>"}</ul></div>`;
+    <div class="card"><div class="card-head"><span class="l">Valence/Arousal ↔ Puan</span><span class="h">pearson r</span></div><ul>
+      ${corrLine("Valence",rV,valid.length)}${corrLine("Arousal",rA,valid.length)}${corrLine("Fiziksel agri",rP,painValid.length)}</ul>
+      <p class="note">n<10'da r degeri gurultuye cok duyarli — yorum yapmadan once veri biriktir.</p></div>
+    <div class="card"><div class="card-head"><span class="l">Tur ↔ Valence/Arousal/Puan</span></div><ul>${genreRows||"<li>Veri az.</li>"}</ul></div>
+    ${intentRows?`<div class="card"><div class="card-head"><span class="l">Niyetlilik ↔ Puan</span><span class="h">kendi secim vs zincir vs wildcard</span></div><ul>${intentRows}</ul></div>`:""}`;
 }
 
 // ---------- Export / Import ----------
@@ -414,7 +444,7 @@ function render(){
   d.innerHTML=`
     <div class="head">
       <div><p class="t display">Gun ${e.day} — ${esc(e.album)}</p>
-      <p class="a">${esc(e.artist)}${mb&&mb.firstDate?` <span class="mono">· ${esc(mb.firstDate)}</span>`:""}${e.rating?` · <span class="rating">${esc(e.rating)}/5</span>`:""}${e.energy?` · enerji: ${esc(e.energy)}`:""}${e.mood?` · mood: ${esc(e.mood)}`:""}</p></div>
+      <p class="a">${esc(e.artist)}${mb&&mb.firstDate?` <span class="mono">· ${esc(mb.firstDate)}</span>`:""}${e.rating?` · <span class="rating">${esc(e.rating)}/5</span>`:""}${e.valence?` · valence: ${esc(e.valence)}`:""}${e.arousal?` · arousal: ${esc(e.arousal)}`:""}${e.pain?` · agri: ${esc(e.pain)}`:""}${e.intent?` · ${esc(e.intent)}`:""}</p></div>
       <button class="del" onclick="removeEntry(${i})">×</button>
     </div>
     ${e.note?`<div class="card"><div class="card-head"><span class="l">Debrief Notun</span><span class="h">${esc(e.date)}</span></div><p>${esc(e.note)}</p></div>`:""}
