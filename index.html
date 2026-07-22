@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Albumboxd</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💿</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
   :root {
@@ -108,7 +109,7 @@
     </div>
   </aside>
   <main>
-    <h1 class="display">Albüm Ritüeli</h1>
+    <h1 class="display">Albumboxd</h1>
     <p class="sub">veri + log katmanı · yorum katmanı Claude sohbetinde yaşar</p>
 
     <div class="tabs">
@@ -123,8 +124,8 @@
     <div id="pane-debrief">
       <div class="form">
         <div class="row">
-          <div><label>Albüm</label><input id="in-album" placeholder="Leisure" /></div>
-          <div><label>Sanatçı</label><input id="in-artist" placeholder="Blur" /></div>
+          <div><label>Albüm</label><input id="in-album" placeholder="The Stone Roses" /></div>
+          <div><label>Sanatçı</label><input id="in-artist" placeholder="The Stone Roses" /></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:start;margin-bottom:14px">
           <div>
@@ -134,7 +135,11 @@
             <div style="margin-top:10px"><label>Arousal <span class="mono" id="arousal-val">5</span>/10</label>
               <input id="in-arousal" type="range" min="1" max="10" value="5" oninput="updateAffect()" style="width:100%" /></div>
           </div>
-          <div></div>
+          <div>
+            <label>Dinleme tarihi</label>
+            <input id="in-date" type="date" />
+            <p class="note" style="margin-top:8px">Boş bırakılırsa bugün. Dün dinleyip bugün logluyorsan geri al — streak ve tarih buna göre işler.</p>
+          </div>
           <div style="border:1px solid var(--border);border-radius:8px;padding:10px;width:150px">
             <svg id="affect-map" width="110" height="110" viewBox="0 0 110 110" style="display:block;margin:0 auto">
               <line x1="55" y1="4" x2="55" y2="106" stroke="#3A342C" stroke-width="1"/>
@@ -501,7 +506,7 @@ async function logDay(){
       intent:$("in-intent").value,
       note:$("in-note").value.trim(),
       analysis:"", // Claude sohbetinden yapistirilir
-      date:new Date().toISOString().slice(0,10),
+      date:($("in-date").value||new Date().toISOString().slice(0,10)),
       mb, wiki, labelMates:null
     };
     if(mb&&mb.labelIds&&mb.labelIds[0]){
@@ -512,7 +517,7 @@ async function logDay(){
     S.log.push(entry); S.active=S.log.length-1; save(); render();
     if(S.log.length%7===0)exportLog(); // otomatik yedek: 7 kayitta bir, her sey dahil
     ["in-album","in-artist","in-rating","in-note","in-prod","in-anx","in-dep"].forEach(id=>$(id).value="");
-    $("in-intent").value=""; $("in-valence").value=5; $("in-arousal").value=5; updateAffect();
+    $("in-intent").value=""; $("in-valence").value=5; $("in-arousal").value=5; $("in-date").value=new Date().toISOString().slice(0,10); updateAffect();
   }catch(e){ showErr("Loglanamadı: "+e.message); }
   finally{ btn.disabled=false; btn.textContent="Günü Logla + Künye Çek"; }
 }
@@ -614,7 +619,7 @@ function renderRetro(){
 function exportLog(){
   const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
   const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob); a.download="album-rituel-log.json"; a.click();
+  a.href=URL.createObjectURL(blob); a.download="albumboxd-log.json"; a.click();
   localStorage.setItem("lastExport",String(Date.now()));
   render();
 }
@@ -801,6 +806,7 @@ function render(){
     </div>`;
 }
 
+if($("in-date"))$("in-date").value=new Date().toISOString().slice(0,10);
 render();
 switchTab(localStorage.getItem("startTab")||"debrief");
 </script>
