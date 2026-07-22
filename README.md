@@ -1,4 +1,4 @@
-# Album Ritueli — v2
+# Album Ritueli — v3 (final)
 
 Tek dosyalık statik site. Build step yok, framework yok, dependency yok.
 
@@ -7,15 +7,11 @@ Tek dosyalık statik site. Build step yok, framework yok, dependency yok.
 - **Wildcard-7:** Her 7. gün rozet kırmızıya döner, zincir kırma günü hatırlatılır.
 - **Künye (kesin veri):** MusicBrainz — prodüktör, label, tarih, tür. Kaynak linkli.
 - **Zincir Malzemesi:** Aynı label'dan dönem komşusu albümler otomatik listelenir.
-- **Merak Katmanı (opsiyonel LLM):** Dönem/soy hattı/anatomi/söz dünyası/trivia —
-  kendi Anthropic API key'inle, künye verisi modele "kesin veri" olarak beslenir
-  (halüsinasyon alanı daraltılmış). Sözler birebir basılmaz; çözümlenir.
-- **Sorgu Hattı:** Albüm başına serbest soru-cevap, geçmişi kayıtlı.
 - **Geriye Bak:** Enerji↔tür ve tür↔puan korelasyon tabloları (logdan hesaplanır).
 - **Export/Import:** localStorage silinirse diye JSON yedek.
 
 Arşiv tarayıcının `localStorage`'ında tutulur — kalıcıdır, token/kota derdi yoktur.
-API key sadece sessionStorage'da yaşar; sekme kapanınca silinir.
+Sitede LLM ve API key YOKTUR — yorum katmani (donem/soy hatti/anatomi/soz dunyasi/trivia + soru-cevap) Claude sohbetinde yapilir, cikti "Claude Analizi" alanina yapistirilarak arsivlenir. Bu sayede site sifir maliyetli ve kota-bagimsizdir.
 
 ## Deploy (GitHub Pages, ~3 dakika)
 

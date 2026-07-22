@@ -9,7 +9,7 @@
   :root {
     --bg:#0E0D0C; --panel:#151310; --border:#3A342C; --text:#EDE6D6;
     --muted:#8A8072; --faint:#5A5348; --gold:#C9A24B; --gold-h:#D9B461;
-    --body:#C9C2B4; --red:#C9704B; --green:#8FA86B;
+    --body:#C9C2B4; --red:#C9704B;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex}
@@ -56,10 +56,7 @@
   .tag{display:inline-block;font-size:10px;color:var(--gold);border:1px solid var(--border);border-radius:3px;padding:1px 6px;margin:2px 3px 2px 0}
   .src{font-size:10px;color:var(--faint);margin-top:8px}.src a{color:var(--muted)}
   .empty{border:1px dashed var(--border);border-radius:8px;padding:36px;text-align:center;font-size:13px;color:var(--muted)}
-  .chat{max-height:320px;overflow-y:auto;margin-bottom:10px}
-  .msg{font-size:13px;line-height:1.6;border-radius:8px;padding:8px 12px;margin-bottom:8px}
-  .msg.u{background:#1B1814;margin-left:32px}
-  .msg.a{border:1px solid var(--border);color:var(--body);margin-right:16px;white-space:pre-wrap}
+  .analysis{white-space:pre-wrap}
   table{border-collapse:collapse;width:100%}
   th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #26221C}
   th{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--faint)}
@@ -80,12 +77,11 @@
   </aside>
   <main>
     <h1 class="display">Album Ritueli</h1>
-    <p class="sub">debrief · zincir · merak katmani · geriye bakis</p>
+    <p class="sub">veri + log katmani · yorum katmani Claude sohbetinde yasar</p>
 
     <div class="tabs">
       <button class="tab on" id="tab-debrief" onclick="switchTab('debrief')">Debrief</button>
       <button class="tab" id="tab-retro" onclick="switchTab('retro')">Geriye Bak</button>
-      <button class="tab" id="tab-settings" onclick="switchTab('settings')">Ayarlar</button>
     </div>
 
     <div id="err" class="err" style="display:none"></div>
@@ -117,36 +113,21 @@
           </div>
         </div>
         <div style="margin-bottom:12px"><label>Not / reaksiyon</label><textarea id="in-note" placeholder="Kisa reaksiyon, one cikan sarkilar, akilda kalan..."></textarea></div>
-        <button class="go" id="btn-go" onclick="logDay()">Gunu Logla + Dossier Cek</button>
-        <p class="note">Kunye MusicBrainz'den, baglam Wikipedia'dan otomatik cekilir. Merak katmani (donem/soy hatti/anatomi/soz dunyasi/trivia + soru-cevap) icin Ayarlar'dan API key gir — opsiyonel.</p>
+        <button class="go" id="btn-go" onclick="logDay()">Gunu Logla + Kunye Cek</button>
+        <p class="note">Kunye MusicBrainz'den, baglam ozeti Wikipedia'dan cekilir (~3-4 sn, rate limit geregi).
+        Derin analiz — donem, soy hatti, anatomi, soz dunyasi, trivia — Claude sohbetinde yapilir;
+        ciktiyi asagidaki "Claude Analizi" alanina yapistirip arsivleyebilirsin.</p>
       </div>
       <div id="dossier"></div>
     </div>
 
     <!-- RETRO TAB -->
     <div id="pane-retro" style="display:none"></div>
-
-    <!-- SETTINGS TAB -->
-    <div id="pane-settings" style="display:none">
-      <div class="form">
-        <label>Anthropic API Key (merak katmani icin, opsiyonel)</label>
-        <input id="in-key" type="password" placeholder="sk-ant-..." />
-        <p class="note">Key sadece bu tarayici oturumunun hafizasinda tutulur (sessionStorage) — sunucuya gitmez cunku sunucu yok; istekler tarayicindan direkt Anthropic'e gider. Sekmeyi kapatinca silinir, her oturumda yeniden girersin. Kalici saklamamak bilincli bir guvenlik tercihi.</p>
-        <button class="go" style="margin-top:10px" onclick="saveKey()">Kaydet</button>
-        <span id="key-status" class="note"></span>
-      </div>
-      <div class="card">
-        <div class="card-head"><span class="l">Wildcard Kurali</span></div>
-        <p>Her 7. gun zincir kirilir: sifir baglantili bir album secilir (scene-cluster hapsine karsi).
-        Sol ustteki gun rozetinde wildcard gunu kirmizi gorunur. Wildcard secimini sistem yapmaz —
-        bilincli olarak sana birakilmistir; rastgelelik disaridan gelmeli.</p>
-      </div>
-    </div>
   </main>
 
 <script>
 const STORE = "album-rituel:v2";
-let S = { log: [], active: null }; // log: array of entries in day order
+let S = { log: [], active: null };
 try { const raw = localStorage.getItem(STORE); if (raw) S = JSON.parse(raw); } catch(e){}
 
 const $ = (id) => document.getElementById(id);
@@ -203,7 +184,6 @@ async function fetchWiki(album,artist){
   return { title:sum.title, extract:sum.extract||"", url:(sum.content_urls&&sum.content_urls.desktop&&sum.content_urls.desktop.page)||`https://en.wikipedia.org/wiki/${t}` };
 }
 
-// Chain: albums on the same label (era-adjacent)
 async function fetchLabelMates(labelId, excludeRgId){
   try{
     const d=await mbJson(`${MB}/release-group?label=${labelId}&fmt=json&limit=100&type=album`);
@@ -212,76 +192,6 @@ async function fetchLabelMates(labelId, excludeRgId){
       .map(rg=>({title:rg.title, artist:(rg["artist-credit"]||[]).map(a=>a.name).join(""), date:rg["first-release-date"]||""}))
       .sort((a,b)=>(a.date||"9999").localeCompare(b.date||"9999"));
   }catch(e){ return []; }
-}
-
-// ---------- LLM curiosity layer (optional, user's own key) ----------
-function getKey(){ return sessionStorage.getItem("anthropic-key")||""; }
-function saveKey(){
-  const k=$("in-key").value.trim();
-  if(k){ sessionStorage.setItem("anthropic-key",k); $("key-status").textContent=" Kaydedildi (bu oturum icin)."; }
-  else { sessionStorage.removeItem("anthropic-key"); $("key-status").textContent=" Silindi."; }
-}
-
-async function callClaude(system, messages, maxTokens){
-  const key=getKey(); if(!key) throw new Error("API key yok — Ayarlar'dan gir.");
-  const r=await fetch("https://api.anthropic.com/v1/messages",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "x-api-key":key,
-      "anthropic-version":"2023-06-01",
-      "anthropic-dangerous-direct-browser-access":"true"
-    },
-    body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:maxTokens||4000,system,messages})
-  });
-  if(!r.ok){ const t=await r.text(); throw new Error("API "+r.status+": "+t.slice(0,120)); }
-  const data=await r.json();
-  return (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n").trim();
-}
-
-const CUR_SYSTEM=`Sen bir müzik tarihçisi, kültür eleştirmeni ve söz çözümleyicisisin. Yanıtını SADECE geçerli JSON olarak ver, code fence yok. Anahtarlar (Türkçe içerik): "context" (dönemin sosyo-politik iklimi + albümün ilişkisi, 120-160 kelime), "lineage" (öncüller ve etkilenenler, somut isimler, 120-160 kelime), "musicalAnatomy" (1-2 şarkıda aranjman/prodüksiyon kararları, ekipman değil kompozisyon odaklı, 140-180 kelime), "lyricalWorld" (söz dünyası: temalar, anlatıcı, metaforlar, dönem ruhu; sözleri birebir ALINTLAMA — telif; kendi cümlelerinle çözümle, 150-200 kelime), "backstage" (trivia/anekdot/drama, 110-150 kelime). Sana verilen KESİN VERİYİ (prodüktör, label, tarih) temel al, onunla çelişme, emin olmadığını uydurma.`;
-
-const CHAT_SYSTEM=`Sen bir müzik tarihçisi ve kültür eleştirmenisin; belirli bir albüm hakkında Türkçe sohbet ediyorsun. Net, analitik, nüktedan; fluff yok. Şarkı sözlerini birebir alıntılama (telif) — kendi cümlelerinle çözümle. Verilen kesin veriyle (prodüktör/label/tarih) çelişme, emin olmadığını uydurma. 200 kelime altı tut, açıkça istenirse uzat.`;
-
-function factSheet(e){
-  const mb=e.mb||{};
-  return `KESİN VERİ (MusicBrainz):
-Albüm: ${e.album} — ${e.artist}${mb.firstDate?` | İlk yayın: ${mb.firstDate}`:""}${(mb.labels||[]).length?` | Label: ${mb.labels.join(", ")}`:""}${(mb.producers||[]).length?` | Prodüktör: ${mb.producers.join(", ")}`:""}${(mb.genres||[]).length?` | Tür etiketleri: ${mb.genres.join(", ")}`:""}
-${e.wiki&&e.wiki.extract?`Wikipedia özeti: ${e.wiki.extract}`:""}`;
-}
-
-async function genCuriosity(idx){
-  const e=S.log[idx]; if(!e)return;
-  clearErr();
-  const btn=$("btn-cur"); if(btn){btn.disabled=true;btn.textContent="Uretiliyor...";}
-  try{
-    const raw=await callClaude(CUR_SYSTEM,[{role:"user",content:factSheet(e)}],4000);
-    const clean=raw.replace(/```json|```/g,"").trim();
-    let parsed;
-    try{ parsed=JSON.parse(clean); }
-    catch(err){
-      const lc=clean.lastIndexOf('",');
-      if(lc>0) parsed=JSON.parse(clean.slice(0,lc+1)+"}"); else throw err;
-    }
-    e.cur=parsed; save(); render();
-  }catch(err){ showErr("Merak katmani uretilemedi: "+err.message); }
-  finally{ if(btn){btn.disabled=false;btn.textContent="Merak Katmanini Uret";} }
-}
-
-async function ask(idx){
-  const e=S.log[idx]; if(!e)return;
-  const inp=$("chat-in"); const q=(inp.value||"").trim(); if(!q)return;
-  inp.value=""; clearErr();
-  e.chat=e.chat||[]; e.chat.push({role:"user",content:q}); save(); render();
-  try{
-    const history=e.chat.map(m=>({role:m.role,content:m.content}));
-    const ans=await callClaude(CHAT_SYSTEM,[
-      {role:"user",content:factSheet(e)+(e.cur?`\nMevcut çözümleme özeti: ${Object.values(e.cur).join(" ").slice(0,1500)}`:"")},
-      {role:"assistant",content:"Anlaşıldı, bu albüm hakkında sorularını bekliyorum."},
-      ...history
-    ],1500);
-    e.chat.push({role:"assistant",content:ans}); save(); render();
-  }catch(err){ showErr("Soru yanitlanamadi: "+err.message); }
 }
 
 // ---------- Log a day ----------
@@ -297,10 +207,10 @@ async function logDay(){
       album:(mb&&mb.title)||album, artist:(mb&&mb.artist)||artist,
       rating:$("in-rating").value, energy:$("in-energy").value, mood:$("in-mood").value,
       note:$("in-note").value.trim(),
+      analysis:"", // Claude sohbetinden yapistirilir
       date:new Date().toISOString().slice(0,10),
-      mb, wiki, cur:null, chat:[], labelMates:null
+      mb, wiki, labelMates:null
     };
-    // chain material: label mates (one label, capped)
     if(mb&&mb.labelIds&&mb.labelIds[0]){
       await sleep(1100);
       entry.labelMates=(await fetchLabelMates(mb.labelIds[0],mb.id)).slice(0,12);
@@ -309,12 +219,18 @@ async function logDay(){
     ["in-album","in-artist","in-rating","in-note"].forEach(id=>$(id).value="");
     $("in-energy").value=""; $("in-mood").value="";
   }catch(e){ showErr("Loglanamadi: "+e.message); }
-  finally{ btn.disabled=false; btn.textContent="Gunu Logla + Dossier Cek"; }
+  finally{ btn.disabled=false; btn.textContent="Gunu Logla + Kunye Cek"; }
+}
+
+function saveAnalysis(i){
+  const e=S.log[i]; if(!e)return;
+  e.analysis=$("analysis-in").value.trim();
+  save(); render();
 }
 
 function removeEntry(i){
   S.log.splice(i,1);
-  S.log.forEach((e,j)=>e.day=j+1); // recount days
+  S.log.forEach((e,j)=>e.day=j+1);
   if(S.active>=S.log.length)S.active=S.log.length?S.log.length-1:null;
   save(); render();
 }
@@ -327,12 +243,10 @@ function renderRetro(){
     const g=(e.mb&&e.mb.genres&&e.mb.genres[0])||"?";
     return {day:e.day,album:e.album,rating:parseFloat(e.rating)||null,energy:e.energy||"?",mood:e.mood||"?",genre:g};
   });
-  // energy x genre counts
   const cross={};
   rows.forEach(r=>{ const k=r.energy+"|"+r.genre; cross[k]=(cross[k]||0)+1; });
   const crossRows=Object.entries(cross).sort((a,b)=>b[1]-a[1]).slice(0,10)
     .map(([k,v])=>{const [en,g]=k.split("|");return `<li><b>${esc(en)}</b> enerji → ${esc(g)} <span class="mono">×${v}</span></li>`;}).join("");
-  // avg rating by genre
   const byG={};
   rows.forEach(r=>{ if(r.rating==null)return; (byG[r.genre]=byG[r.genre]||[]).push(r.rating); });
   const avgRows=Object.entries(byG).map(([g,arr])=>[g,(arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2),arr.length])
@@ -342,7 +256,8 @@ function renderRetro(){
     <div class="card"><div class="card-head"><span class="l">Log Tablosu</span><span class="h">${rows.length} gun</span></div>
       <table><tr><th>Gun</th><th>Album</th><th>Puan</th><th>Enerji</th><th>Mood</th><th>Tur</th></tr>
       ${rows.map(r=>`<tr><td class="mono">${r.day}</td><td>${esc(r.album)}</td><td class="rating mono">${r.rating??"—"}</td><td>${esc(r.energy)}</td><td>${esc(r.mood)}</td><td>${esc(r.genre)}</td></tr>`).join("")}
-      </table></div>
+      </table>
+      <p class="note">Haftalik/aylik "geriye bak" analizi icin bu tabloyu (ya da Export JSON'u) Claude sohbetine yapistir — korelasyon yorumunu orada yapariz.</p></div>
     <div class="card"><div class="card-head"><span class="l">Enerji ↔ Tur</span><span class="h">en sik kombinasyonlar</span></div><ul>${crossRows||"<li>Veri az.</li>"}</ul>
       <p class="note">n kucukken korelasyon degil anekdottur — 10+ gun olmadan sonuc cikarma.</p></div>
     <div class="card"><div class="card-head"><span class="l">Tur ↔ Puan</span></div><ul>${avgRows||"<li>Puan girilmemis.</li>"}</ul></div>`;
@@ -363,12 +278,11 @@ function importLog(ev){
 
 // ---------- Tabs & render ----------
 function switchTab(t){
-  ["debrief","retro","settings"].forEach(x=>{
+  ["debrief","retro"].forEach(x=>{
     $("pane-"+x).style.display=x===t?"block":"none";
     $("tab-"+x).classList.toggle("on",x===t);
   });
   if(t==="retro")renderRetro();
-  if(t==="settings")$("in-key").value=getKey();
 }
 
 function render(){
@@ -388,7 +302,6 @@ function render(){
   const d=$("dossier");
   if(S.active==null||!S.log[S.active]){ d.innerHTML='<div class="empty">Gunu logla ya da soldan bir kayit sec.</div>'; return; }
   const i=S.active, e=S.log[i], mb=e.mb, wiki=e.wiki;
-  const curSections=[["context","Donem & Baglam"],["lineage","Soy Hatti"],["musicalAnatomy","Muzikal Anatomi"],["lyricalWorld","Soz Dunyasi"],["backstage","Sahne Arkasi"]];
 
   d.innerHTML=`
     <div class="head">
@@ -408,20 +321,15 @@ function render(){
       <p class="src">Kaynak: <a href="${esc(wiki.url)}" target="_blank" rel="noopener">${esc(wiki.title)}</a></p></div>`:""}
     ${e.labelMates&&e.labelMates.length?`<div class="card"><div class="card-head"><span class="l">Zincir Malzemesi</span><span class="h">ayni label — donem komsulari</span></div><ul>
       ${e.labelMates.map(m=>`<li>${esc(m.title)} — <b>${esc(m.artist)}</b>${m.date?` <span class="mono" style="color:var(--faint)">${esc(m.date.slice(0,4))}</span>`:""}</li>`).join("")}
-      </ul><p class="note">Bu liste oneri degil ham madde: ayni label = ayni A&R kulagi/scene. Yarinki zincir baglantisini buradan ya da produktor isminden kur.</p></div>`:""}
+      </ul><p class="note">Bu liste oneri degil ham madde: ayni label = ayni A&R kulagi/scene. Yarinki zincir baglantisini Claude sohbetinde bu veriyle kur.</p></div>`:""}
     <div class="card">
-      <div class="card-head"><span class="l">Merak Katmani</span><span class="h">llm — kesin veriye baglanmis</span></div>
-      ${e.cur
-        ? curSections.map(([id,label])=>`<div style="margin-bottom:12px"><p style="font-size:12px;color:var(--gold);margin-bottom:4px">${label}</p><p>${esc(e.cur[id]||"—")}</p></div>`).join("")
-        : `<p style="margin-bottom:10px">Henuz uretilmedi. Kunye verisi modele "kesin veri" olarak verilir — produktor/tarih/label uydurma alani kapali.</p><button class="go" id="btn-cur" onclick="genCuriosity(${i})">Merak Katmanini Uret</button>`}
-    </div>
-    <div class="card">
-      <div class="card-head"><span class="l">Sorgu Hatti</span><span class="h">bu albume dair her sey</span></div>
-      <div class="chat">${(e.chat||[]).map(m=>`<div class="msg ${m.role==="user"?"u":"a"}">${esc(m.content)}</div>`).join("")||'<p class="note">Ornek: "Sozlerdeki ofke kime yonelik?" / "Bu produksiyonu bugun kim kullaniyor?"</p>'}</div>
-      <div style="display:flex;gap:8px">
-        <input id="chat-in" placeholder="Sorunu yaz..." onkeydown="if(event.key==='Enter')ask(${i})" />
-        <button class="go" onclick="ask(${i})">Sor</button>
-      </div>
+      <div class="card-head"><span class="l">Claude Analizi</span><span class="h">sohbetten yapistir</span></div>
+      ${e.analysis
+        ? `<p class="analysis">${esc(e.analysis)}</p>
+           <button class="mini" style="margin-top:10px" onclick="S.log[${i}].analysis='';save();render()">Duzenle</button>`
+        : `<p class="note" style="margin-top:0;margin-bottom:10px">Donem/soy hatti/anatomi/soz dunyasi/trivia analizi Claude sohbetinde uretilir; ciktiyi buraya yapistir, albumle birlikte arsivlensin.</p>
+           <textarea id="analysis-in" style="min-height:120px" placeholder="Claude'un analizini buraya yapistir..."></textarea>
+           <button class="go" style="margin-top:10px" onclick="saveAnalysis(${i})">Kaydet</button>`}
     </div>`;
 }
 
