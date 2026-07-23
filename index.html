@@ -4,7 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Albumboxd</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 90'><text y='.9em' font-size='90'>💿</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
   :root {
@@ -81,7 +80,8 @@
   th{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--faint)}
   .rating{color:var(--gold)}
   @media(max-width:700px){body{flex-direction:column}aside{width:100%;border-right:none;border-bottom:1px solid var(--border)}.row,.row3{grid-template-columns:1fr}
-    .form > div[style*="grid-template-columns:1fr 1fr auto"]{grid-template-columns:1fr!important}}
+    .affect-grid{grid-template-columns:1fr!important}
+    .affect-grid > div:last-child{width:100%!important}}
 </style>
 </head>
 <body>
@@ -124,10 +124,10 @@
     <div id="pane-debrief">
       <div class="form">
         <div class="row">
-          <div><label>Albüm</label><input id="in-album" placeholder="Leisure" /></div>
-          <div><label>Sanatçı</label><input id="in-artist" placeholder="Blur" /></div>
+          <div><label>Albüm</label><input id="in-album" placeholder="The Stone Roses" /></div>
+          <div><label>Sanatçı</label><input id="in-artist" placeholder="The Stone Roses" /></div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:start;margin-bottom:14px">
+        <div class="affect-grid" style="display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:start;margin-bottom:14px">
           <div>
             <label>Puan (0-5)</label><input id="in-rating" type="number" min="0" max="5" step="0.5" placeholder="3.5" />
             <div style="margin-top:10px"><label>Valence <span class="mono" id="valence-val">5</span>/10</label>
@@ -263,14 +263,27 @@ try { const raw = localStorage.getItem(STORE); if (raw) S = JSON.parse(raw); } c
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-function save(){ localStorage.setItem(STORE, JSON.stringify(S)); }
+function save(){
+  try{ localStorage.setItem(STORE, JSON.stringify(S)); }
+  catch(e){
+    showErr("Depolama dolu — kayıt DİSKE YAZILAMADI. Hemen Export al, sonra eski kayıtlardan Genius/Wikipedia verisi tasiyanlari silmeyi dusun. (Detay: "+e.name+")");
+  }
+}
 function showErr(m){ $("err").textContent=m; $("err").style.display="block"; }
 function clearErr(){ $("err").style.display="none"; }
 const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
 
 // ---------- MusicBrainz + Wikipedia ----------
 const MB="https://musicbrainz.org/ws/2";
-async function mbJson(u){ const r=await fetch(u,{headers:{Accept:"application/json"}}); if(!r.ok)throw new Error("MusicBrainz "+r.status); return r.json(); }
+async function mbJson(u,retried){
+  const r=await fetch(u,{headers:{Accept:"application/json"}});
+  if(r.status===429||r.status===503){
+    if(!retried){ await sleep(2200); return mbJson(u,true); } // tek retry, daha uzun bekleme
+    throw new Error("MusicBrainz rate limit ("+r.status+") — biraz bekleyip tekrar dene");
+  }
+  if(!r.ok)throw new Error("MusicBrainz "+r.status);
+  return r.json();
+}
 
 async function fetchMB(album,artist){
   const q=encodeURIComponent(`releasegroup:"${album}" AND artist:"${artist}"`);
@@ -487,8 +500,7 @@ function updateAffect(){
   else label="Bitkin / düşük enerjili bölge.";
   const lbl=$("affect-label"); if(lbl)lbl.textContent=label;
 }
-document.addEventListener("DOMContentLoaded",updateAffect);
-setTimeout(updateAffect,0);
+updateAffect();
 
 // ---------- Log a day ----------
 async function logDay(){
@@ -497,7 +509,12 @@ async function logDay(){
   clearErr();
   const btn=$("btn-go"); btn.disabled=true; btn.textContent="Çekiliyor...";
   try{
-    const [mb,wiki]=await Promise.all([fetchMB(album,artist).catch(()=>null), fetchWiki(album,artist).catch(()=>null)]);
+    let mbErr=null;
+    const [mb,wiki]=await Promise.all([
+      fetchMB(album,artist).catch(e=>{mbErr=e;return null;}),
+      fetchWiki(album,artist).catch(()=>null)
+    ]);
+    if(!mb&&mbErr)showErr("Künye çekilemedi ("+mbErr.message+") — kayıt künyesiz loglandı. Daha sonra silip yeniden loglayabilirsin.");
     const entry={
       day:S.log.length+1,
       album:(mb&&mb.title)||album, artist:(mb&&mb.artist)||artist,
