@@ -618,7 +618,7 @@ function renderRetro(){
   S.log.forEach(e=>(((e.mb||{}).tracks)||[]).forEach(t=>{ if(t.star||t.liked)picks.push({song:t.title,album:e.album,day:e.day,star:!!t.star,liked:!!t.liked}); }));
   p.innerHTML=`
     <div class="card"><div class="card-head"><span class="l">Zincir Görünümü</span><span class="h">günler arası bağlantı</span></div><ul>${chainRows||"<li>Log boş.</li>"}</ul></div>
-    ${picks.length?`<div class="card"><div class="card-head"><span class="l">Seçilmiş Şarkılar</span><span class="h">${picks.length} şarkı — ★ masterpiece · ♥ wow</span></div><ul>
+    ${picks.length?`<div class="card"><div class="card-head"><span class="l">Seçilmiş Şarkılar</span><span class="h">${picks.length} şarkı — ★ fav · ♥ liked</span></div><ul>
       ${picks.sort((a,b)=>(b.star-a.star)).map(l=>`<li>${l.star?'<span style="color:var(--gold)">★</span> ':""}${l.liked?'<span style="color:var(--red)">♥</span> ':""}<b>${esc(l.song)}</b> — ${esc(l.album)} <span class="mono" style="color:var(--faint)">g${l.day}</span></li>`).join("")}</ul></div>`:""}
     <div class="card"><div class="card-head"><span class="l">Log Tablosu</span><span class="h">${rows.length} gün</span></div>
       <table><tr><th>Gün</th><th>Album</th><th>Puan</th><th>Valence</th><th>Arousal</th><th>Tür</th></tr>
@@ -781,11 +781,11 @@ function render(){
       <p class="src">Kaynak: <a href="${esc(mb.url)}" target="_blank" rel="noopener">MusicBrainz</a></p></div>`:""}
     ${mb&&(mb.tracks||[]).length?`<div class="card"><div class="card-head"><span class="l">Tracklist</span>
       <button class="mini" onclick="toggleTracks(${i})">${openTracks.has(i)?"Gizle":"Göster ("+mb.tracks.length+")"}</button>
-      <span class="h">★ masterpiece · ♥ wow</span></div>
+      <span class="h">★ fav · ♥ liked </span></div>
       ${openTracks.has(i)?`<ul>
       ${mb.tracks.map((t,ti)=>`<li style="display:flex;align-items:center;gap:6px">
-        <button onclick="toggleStar(${i},${ti})" title="masterpiece" style="background:none;border:none;cursor:pointer;font-size:14px;color:${t.star?"var(--gold)":"var(--faint)"}">${t.star?"★":"☆"}</button>
-        <button onclick="toggleLike(${i},${ti})" title="wow" style="background:none;border:none;cursor:pointer;font-size:14px;color:${t.liked?"var(--red)":"var(--faint)"}">${t.liked?"♥":"♡"}</button>
+        <button onclick="toggleStar(${i},${ti})" title="fav" style="background:none;border:none;cursor:pointer;font-size:14px;color:${t.star?"var(--gold)":"var(--faint)"}">${t.star?"★":"☆"}</button>
+        <button onclick="toggleLike(${i},${ti})" title="like" style="background:none;border:none;cursor:pointer;font-size:14px;color:${t.liked?"var(--red)":"var(--faint)"}">${t.liked?"♥":"♡"}</button>
         <span style="flex:1">${esc(t.title)}</span>
         ${t.length?`<span class="mono" style="color:var(--faint);font-size:11px">${fmtLen(t.length)}</span>`:""}
       </li>`).join("")}</ul>`:`<p class="note" style="margin-top:0">${mb.tracks.filter(t=>t.star||t.liked).length?mb.tracks.filter(t=>t.star).length+" ★ · "+mb.tracks.filter(t=>t.liked).length+" ♥ işaretli":"Katlanmış — işaretlemek için aç."}</p>`}
